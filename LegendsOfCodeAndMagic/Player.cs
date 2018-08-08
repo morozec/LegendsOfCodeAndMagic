@@ -231,7 +231,10 @@ namespace LegendsOfCodeAndMagic
                     resultStr += $"USE {it.Key.InstanceId} {it.Value};";
                 }
 
-                var attackTargets = GetAttackTargets(allCards.Where(t => t.IsCreature).ToList(), summonningCreatures, oppPlayerData.PlayerHealth);
+                var attackTargets = GetAttackTargets(allCards.Where(t => t.IsCreature).ToList(),
+                    summonningCreatures,
+                    oppPlayerData.PlayerHealth,
+                    myPlayerData.PlayerHealth);
 
                 var gotCards = new List<Card>();
                 foreach (var at in attackTargets)//сначала сносим стенки
@@ -478,7 +481,7 @@ namespace LegendsOfCodeAndMagic
             {
                 if (usedCards.Contains(attackingCard)) continue;
 
-                if (!isNecessaryToKill)
+                if (!isNecessaryToKill || attackingCard.IsGuard)
                 {
                     var isGoodTrade = IsGoodTrade(attackingCard, targetCreature);
                     if (!isGoodTrade) continue;
@@ -521,7 +524,7 @@ namespace LegendsOfCodeAndMagic
             return attackingCreatures.Sum(c => c.Attack) >= oppHeroHp;
         }
 
-        static IDictionary<Card, int> GetAttackTargets(IList<Card> allCreatures, IList<Card> summonningCreatures, int oppHeroHp)
+        static IDictionary<Card, int> GetAttackTargets(IList<Card> allCreatures, IList<Card> summonningCreatures, int oppHeroHp, int myHeroHp)
         {
             var attackTargets = new Dictionary<Card, int>();
             var allAttackingCreatures = GetAllAttackingCreatures(allCreatures, summonningCreatures);
@@ -576,6 +579,10 @@ namespace LegendsOfCodeAndMagic
 
             //идем в размен
             var orderedOppCreatures = allCreatures.Where(c => c.Location == -1).OrderByDescending(c => c.Attack).ToList();
+
+            var isNecessaryToKill = IsKillingOppHero(myHeroHp, allCreatures.Where(c => c.Location == -1 && !c.IsGuard).ToList());
+            Console.Error.WriteLine($"I CAN BE KILLED: {isNecessaryToKill}");
+
             foreach (var creature in orderedOppCreatures)
             {
                 var currAttackingCreatures = GetCurrentTargetAttackingCreatures(creature, 
@@ -583,7 +590,7 @@ namespace LegendsOfCodeAndMagic
                     new List<Card>(),
                     creature.Defense,
                     creature.IsWard,
-                    false);
+                    isNecessaryToKill);
 
                 foreach (var ac in currAttackingCreatures)
                 {
