@@ -70,10 +70,31 @@ namespace LegendsOfCodeAndMagic
     class Player
     {
         private const int BOARD_SIZE = 6;
+        private static IList<Card> _handCards = new List<Card>();
 
         static IDictionary<int, int> GetManaCurve()
         {
             return new Dictionary<int, int>() {{1, 3}, {2, 4}, {3, 5}, {4, 6}, {5, 5}, {6, 4}, {7, 3}};
+        }
+
+        static IDictionary<int, int> GetHandManaCuvre(IList<Card> handCards)
+        {
+            var handManaCurve = new Dictionary<int, int>();
+            for (int i = 1; i <= 7; ++i)
+            {
+                handManaCurve.Add(i, 0);
+            }
+
+            foreach (var card in handCards)
+            {
+                var cost = card.Cost;
+                if (cost == 0) cost = 1;
+                else if (cost > 7) cost = 7;
+
+                handManaCurve[cost]++;
+            }
+
+            return handManaCurve;
         }
 
         static void Main(string[] args)
@@ -146,7 +167,9 @@ namespace LegendsOfCodeAndMagic
                 if (isDraftPhase)
                 {
                     var manaCurve = GetManaCurve();
-                    var pickedCardId = PickCard(allCards, manaCurve);
+                    var handManaCuvre = GetHandManaCuvre(_handCards);
+                    var pickedCardId = PickCard(allCards, manaCurve, handManaCuvre);
+                    _handCards.Add(allCards[pickedCardId]);
                     Console.WriteLine($"PICK {pickedCardId}");
                     continue;
                 }
@@ -233,69 +256,105 @@ namespace LegendsOfCodeAndMagic
             }
         }
 
-        static int PickCard(IList<Card> cards, IDictionary<int, int> manaCurve)
+        static int PickCard(IList<Card> cards, IDictionary<int, int> manaCurve, IDictionary<int, int> handManaCurve)
         {
-            var cardId = -1;
+            var maxLack = 0;
+            int maxLackCardIndex = -1;
             for (int i = 0; i < cards.Count; ++i)
             {
                 var card = cards[i];
+
                 var isOkCard = (card.IsCreature || card.IsGreenItem) && card.Attack > 0;
-
                 if (!isOkCard) continue;
-                if (cardId == -1)
+
+                var cost = card.Cost;
+                if (cost == 0) cost = 1;
+                else if (cost > 7) cost = 7;
+
+                var manaCurveLack = manaCurve[cost] - handManaCurve[cost];
+                if (maxLackCardIndex == -1 || manaCurveLack > maxLack)
                 {
-                    cardId = i;
-                    continue;
+                    maxLackCardIndex = i;
+                    maxLack = manaCurveLack;
                 }
-
-                //if (card.IsCharge)
-                //{
-                    //if (!cards[cardId].IsCharge)
-                    //{
-                    //    cardId = i;
-                    //}
-                    //else
-                    //{
-                        if (card.Cost < cards[cardId].Cost)
-                        {
-                            cardId = i;
-                        }
-                        else if (card.Cost == cards[cardId].Cost && card.Attack > cards[cardId].Attack)
-                        {
-                            cardId = i;
-                        }
-                        else if (card.Cost == cards[cardId].Cost && card.Attack == cards[cardId].Attack)
-                        {
-                            if (card.Defense > cards[cardId].Defense)
-                            {
-                                cardId = i;
-                            }
-                        }
-                    //}
-                //}
-                //else
-                //{
-                //    if (cards[cardId].IsCharge) continue;
-
-                //    if (card.Cost < cards[cardId].Cost)
-                //    {
-                //        cardId = i;
-                //    }
-                //    else if (card.Cost == cards[cardId].Cost && card.Attack > cards[cardId].Attack)
-                //    {
-                //        cardId = i;
-                //    }
-                //    else if (card.Cost == cards[cardId].Cost && card.Attack == cards[cardId].Attack)
-                //    {
-                //        if (card.Defense > cards[cardId].Defense)
-                //        {
-                //            cardId = i;
-                //        }
-                //    }
-                //}
+                else if (manaCurveLack == maxLack)
+                {
+                    if (card.Attack > cards[maxLackCardIndex].Attack)
+                    {
+                        maxLackCardIndex = i;
+                        maxLack = manaCurveLack;
+                    }
+                    else if (card.Attack == cards[maxLackCardIndex].Attack)
+                    {
+                        maxLackCardIndex = i;
+                        maxLack = manaCurveLack;
+                    }
+                }
             }
 
-            return cardId >= 0 ? cardId : 0;
+            return maxLackCardIndex >= 0 ? maxLackCardIndex : 0;
+
+            //var cardId = -1;
+            //for (int i = 0; i < cards.Count; ++i)
+            //{
+            //    var card = cards[i];
+            //    var isOkCard = (card.IsCreature || card.IsGreenItem) && card.Attack > 0;
+
+            //    if (!isOkCard) continue;
+            //    if (cardId == -1)
+            //    {
+            //        cardId = i;
+            //        continue;
+            //    }
+
+            //    //if (card.IsCharge)
+            //    //{
+            //        //if (!cards[cardId].IsCharge)
+            //        //{
+            //        //    cardId = i;
+            //        //}
+            //        //else
+            //        //{
+            //            if (card.Cost < cards[cardId].Cost)
+            //            {
+            //                cardId = i;
+            //            }
+            //            else if (card.Cost == cards[cardId].Cost && card.Attack > cards[cardId].Attack)
+            //            {
+            //                cardId = i;
+            //            }
+            //            else if (card.Cost == cards[cardId].Cost && card.Attack == cards[cardId].Attack)
+            //            {
+            //                if (card.Defense > cards[cardId].Defense)
+            //                {
+            //                    cardId = i;
+            //                }
+            //            }
+            //        //}
+            //    //}
+            //    //else
+            //    //{
+            //    //    if (cards[cardId].IsCharge) continue;
+
+            //    //    if (card.Cost < cards[cardId].Cost)
+            //    //    {
+            //    //        cardId = i;
+            //    //    }
+            //    //    else if (card.Cost == cards[cardId].Cost && card.Attack > cards[cardId].Attack)
+            //    //    {
+            //    //        cardId = i;
+            //    //    }
+            //    //    else if (card.Cost == cards[cardId].Cost && card.Attack == cards[cardId].Attack)
+            //    //    {
+            //    //        if (card.Defense > cards[cardId].Defense)
+            //    //        {
+            //    //            cardId = i;
+            //    //        }
+            //    //    }
+            //    //}
+            //}
+
+            //return cardId >= 0 ? cardId : 0;
         }
 
         #region SUMMON
