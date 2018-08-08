@@ -585,7 +585,7 @@ namespace LegendsOfCodeAndMagic
             }
 
             //идем в размен
-            var orderedOppCreatures = allCreatures.Where(c => c.Location == -1).OrderByDescending(c => c.Attack).ToList();
+            var orderedOppCreatures = allCreatures.Where(c => c.Location == -1 && !c.IsGuard).OrderByDescending(c => c.Attack).ToList();
 
             var isNecessaryToKill = IsKillingOppHero(myHeroHp, allCreatures.Where(c => c.Location == -1 && !c.IsGuard).ToList());
             Console.Error.WriteLine($"I CAN BE KILLED: {isNecessaryToKill}");
