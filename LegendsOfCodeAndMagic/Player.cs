@@ -72,6 +72,11 @@ namespace LegendsOfCodeAndMagic
         private const int BOARD_SIZE = 6;
         private static IList<Card> _handCards = new List<Card>();
 
+        static IList<int> GetBadCardIds()
+        {
+            return new List<int>(){24};
+        }
+
         static IDictionary<int, int> GetManaCurve()
         {
             return new Dictionary<int, int>() {{1, 3}, {2, 4}, {3, 5}, {4, 6}, {5, 5}, {6, 4}, {7, 3}};
@@ -168,38 +173,15 @@ namespace LegendsOfCodeAndMagic
                 {
                     var manaCurve = GetManaCurve();
                     var handManaCuvre = GetHandManaCuvre(_handCards);
-                    var pickedCardId = PickCard(allCards, manaCurve, handManaCuvre);
+                    var badCardIds = GetBadCardIds();
+                    var pickedCardId = PickCard(allCards, manaCurve, handManaCuvre, badCardIds);
                     _handCards.Add(allCards[pickedCardId]);
                     Console.WriteLine($"PICK {pickedCardId}");
                     continue;
                 }
 
+                var manaLeft = myPlayerData.PlayerMana;
                 var resultStr = "";
-
-                var myCreaturesOnBoardCount = allCards.Count(c => c.IsCreature && c.Location == 1);
-                var summonningCreatures = GetSummonningCreatures(
-                    allCards.Where(c => c.IsCreature && c.Location == 0).ToList(),
-                    myPlayerData.PlayerMana,
-                    BOARD_SIZE - myCreaturesOnBoardCount);
-                foreach (var card in summonningCreatures)
-                {
-                    resultStr += $"SUMMON {card.InstanceId};";
-                }
-
-                //TODO: есть смысл играть items раньше, чем creatures
-                var manaLeft = myPlayerData.PlayerMana - summonningCreatures.Sum(c => c.Cost);
-                var greenItemsTargets = UseGreenItems(allCards.Where(c => c.IsGreenItem).ToList(),
-                    manaLeft,
-                    allCards.Where(c => c.IsCreature).ToList(),
-                    summonningCreatures);
-                foreach (var it in greenItemsTargets)
-                {
-                    manaLeft -= it.Key.Cost;
-                    var targetCreature = allCards.Single(c => c.InstanceId == it.Value);
-                    targetCreature.Attack += it.Key.Attack;
-                    targetCreature.Defense += it.Key.Defense;
-                    resultStr += $"USE {it.Key.InstanceId} {it.Value};";
-                }
 
                 var redItemsTargets = UseRedItems(allCards.Where(c => c.IsRedItem).ToList(),
                     manaLeft,
@@ -213,6 +195,33 @@ namespace LegendsOfCodeAndMagic
                     targetCreature.Defense += it.Key.Defense;
                     resultStr += $"USE {it.Key.InstanceId} {it.Value};";
                 }
+
+                var myCreaturesOnBoardCount = allCards.Count(c => c.IsCreature && c.Location == 1);
+                var summonningCreatures = GetSummonningCreatures(
+                    allCards.Where(c => c.IsCreature && c.Location == 0).ToList(),
+                    manaLeft,
+                    BOARD_SIZE - myCreaturesOnBoardCount);
+                foreach (var card in summonningCreatures)
+                {
+                    manaLeft -= card.Cost;
+                    resultStr += $"SUMMON {card.InstanceId};";
+                }
+
+                //TODO: есть смысл играть items раньше, чем creatures
+                var greenItemsTargets = UseGreenItems(allCards.Where(c => c.IsGreenItem).ToList(),
+                    manaLeft,
+                    allCards.Where(c => c.IsCreature).ToList(),
+                    summonningCreatures);
+                foreach (var it in greenItemsTargets)
+                {
+                    manaLeft -= it.Key.Cost;
+                    var targetCreature = allCards.Single(c => c.InstanceId == it.Value);
+                    targetCreature.Attack += it.Key.Attack;
+                    targetCreature.Defense += it.Key.Defense;
+                    resultStr += $"USE {it.Key.InstanceId} {it.Value};";
+                }
+
+                
 
                 var blueItemsTargets = UseBlueItems(allCards.Where(c => c.IsBlueItem).ToList(),
                     manaLeft,
@@ -259,15 +268,16 @@ namespace LegendsOfCodeAndMagic
             }
         }
 
-        static int PickCard(IList<Card> cards, IDictionary<int, int> manaCurve, IDictionary<int, int> handManaCurve)
+        static int PickCard(IList<Card> cards, IDictionary<int, int> manaCurve, IDictionary<int, int> handManaCurve, IList<int> badCardIds)
         {
             var maxLack = 0;
             int maxLackCardIndex = -1;
             for (int i = 0; i < cards.Count; ++i)
             {
                 var card = cards[i];
+                //if (badCardIds.Contains(card.CardNumber)) continue;
 
-                var isOkCard = (card.IsCreature || card.IsGreenItem) && card.Attack > 0;
+                var isOkCard = (card.IsCreature || card.IsGreenItem) && card.Attack > 0 || card.IsRedItem && card.Defense < 0;
                 if (!isOkCard) continue;
 
                 var cost = card.Cost;
@@ -424,7 +434,7 @@ namespace LegendsOfCodeAndMagic
             if (myCreature.IsGuard) return false;
             if (myCreature.IsWard && !oppCreature.IsWard && myCreature.Attack >= oppCreature.Defense) return true;//мы со щитом убьем с 1 удара
             if (!myCreature.IsWard && !oppCreature.IsWard && myCreature.Attack >= oppCreature.Defense &&
-                myCreature.Defense > oppCreature.Attack) return true; //убьем с 1 удара и не помрем
+                myCreature.Defense > oppCreature.Attack && !oppCreature.IsLethal) return true; //убьем с 1 удара и не помрем
 
             return oppCreature.Attack > myCreature.Attack && myCreature.Attack - oppCreature.Defense <= 1;
             //return oppCreature.Attack > myCreature.Attack || oppCreature.Attack == myCreature.Attack && oppCreature.Defense > myCreature.Defense;
@@ -585,7 +595,7 @@ namespace LegendsOfCodeAndMagic
             }
 
             //идем в размен
-            var orderedOppCreatures = allCreatures.Where(c => c.Location == -1 && !c.IsGuard).OrderByDescending(c => c.Attack).ToList();
+            var orderedOppCreatures = allCreatures.Where(c => c.Location == -1 && !c.IsGuard).OrderByDescending(c => c.Attack + c.Defense).ToList();
 
             var isNecessaryToKill = IsKillingOppHero(myHeroHp, allCreatures.Where(c => c.Location == -1 && !c.IsGuard).ToList());
             Console.Error.WriteLine($"I CAN BE KILLED: {isNecessaryToKill}");
@@ -689,23 +699,21 @@ namespace LegendsOfCodeAndMagic
 
         static Card GetRedItemCreature(Card redItem, IList<Card> allCreatures)
         {
-            var oppCreatures = allCreatures.Where(c => c.Location == -1).ToList();
+            var oppCreatures = allCreatures.Where(c => c.Location == -1).OrderByDescending(c => c.Attack).ToList();
+
+            Card maxHpOppCreature = null;
             foreach (var creature in oppCreatures)
             {
-                if (creature.Defense == redItem.Attack) return creature;
-            }
+                if (Math.Abs(redItem.Defense) < creature.Defense) continue;//TODO: можно наносить часть урона
+                if (creature.IsWard && redItem.Abilities != "BCDGLW") continue; //TODO: абилки врага - это не только щит
 
-            var guardOppCreatures = oppCreatures.Where(c => c.IsGuard).ToList();
-            Card minHpGuardOppCreature = null;
-            foreach (var creature in guardOppCreatures)
-            {
-                if (minHpGuardOppCreature == null || creature.Defense < minHpGuardOppCreature.Defense)
+                if (maxHpOppCreature == null || creature.Defense > maxHpOppCreature.Defense)
                 {
-                    minHpGuardOppCreature = creature;
+                    maxHpOppCreature = creature;
                 }
             }
 
-            return minHpGuardOppCreature;
+            return maxHpOppCreature;
         }
 
         static IDictionary<Card, int> UseRedItems(IList<Card> items, int manaLeft, IList<Card> allCreatures)
