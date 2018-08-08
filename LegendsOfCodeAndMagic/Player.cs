@@ -239,16 +239,16 @@ namespace LegendsOfCodeAndMagic
                 var gotCards = new List<Card>();
                 foreach (var at in attackTargets)//сначала сносим стенки
                 {
-                    var target = allCards.SingleOrDefault(c => c.InstanceId == at.Value && c.IsGuard);
+                    var target = allCards.SingleOrDefault(c => c.InstanceId == at.Item2 && c.IsGuard);
                     if (target != null)
                     {
-                        resultStr += $"ATTACK {at.Key.InstanceId} {at.Value};";
-                        gotCards.Add(at.Key);
+                        resultStr += $"ATTACK {at.Item1.InstanceId} {at.Item2};";
+                        gotCards.Add(at.Item1);
                     }
                 }
-                foreach (var at in attackTargets.Where(x => !gotCards.Contains(x.Key)))
+                foreach (var at in attackTargets.Where(x => !gotCards.Contains(x.Item1)))
                 {
-                    resultStr += $"ATTACK {at.Key.InstanceId} {at.Value};";
+                    resultStr += $"ATTACK {at.Item1.InstanceId} {at.Item2};";
                 }
 
                 Console.WriteLine(resultStr);
@@ -524,13 +524,13 @@ namespace LegendsOfCodeAndMagic
             return attackingCreatures.Sum(c => c.Attack) >= oppHeroHp;
         }
 
-        static IDictionary<Card, int> GetAttackTargets(IList<Card> allCreatures, IList<Card> summonningCreatures, int oppHeroHp, int myHeroHp)
+        static IList<Tuple<Card, int>> GetAttackTargets(IList<Card> allCreatures, IList<Card> summonningCreatures, int oppHeroHp, int myHeroHp)
         {
-            var attackTargets = new Dictionary<Card, int>();
+            var attackTargets = new List<Tuple<Card, int>>();
             var allAttackingCreatures = GetAllAttackingCreatures(allCreatures, summonningCreatures);
 
-            foreach (var card in allAttackingCreatures)
-                attackTargets.Add(card, -1);
+            //foreach (var card in allAttackingCreatures)
+            //    attackTargets.Add(card, -1);
 
             var oppGuards = new List<Card>();
             foreach (var card in allCreatures.Where(c => c.Location == -1))
@@ -559,7 +559,7 @@ namespace LegendsOfCodeAndMagic
 
                 foreach (var ac in guardAttackingCreatures)
                 {
-                    attackTargets[ac] = guard.InstanceId;
+                    attackTargets.Add(new Tuple<Card, int>(ac, guard.InstanceId));
                     allAttackingCreatures.Remove(ac);
                 }
             }
@@ -567,15 +567,22 @@ namespace LegendsOfCodeAndMagic
             var notKillingGuard = notKillingGuards.FirstOrDefault();
             if (notKillingGuard != null && attackTargets.Any())
             {
-                foreach (var card in attackTargets.Keys.ToList())
+                foreach (var card in allAttackingCreatures)
                 {
-                    if (attackTargets[card] == -1) attackTargets[card] = notKillingGuard.InstanceId;
+                    attackTargets.Add(new Tuple<Card, int>(card, notKillingGuard.InstanceId));
                 }
 
                 return attackTargets;
             }
             
-            if (IsKillingOppHero(oppHeroHp, allAttackingCreatures)) return attackTargets;
+            if (IsKillingOppHero(oppHeroHp, allAttackingCreatures))
+            {
+                foreach (var card in allAttackingCreatures)
+                {
+                    attackTargets.Add(new Tuple<Card, int>(card, -1));
+                }
+                return attackTargets;
+            }
 
             //идем в размен
             var orderedOppCreatures = allCreatures.Where(c => c.Location == -1).OrderByDescending(c => c.Attack).ToList();
@@ -594,11 +601,16 @@ namespace LegendsOfCodeAndMagic
 
                 foreach (var ac in currAttackingCreatures)
                 {
-                    attackTargets[ac] = creature.InstanceId;
+                    attackTargets.Add(new Tuple<Card, int>(ac, creature.InstanceId));
                     allAttackingCreatures.Remove(ac);
                 }
             }
-            
+
+            foreach (var card in allAttackingCreatures)
+            {
+                attackTargets.Add(new Tuple<Card, int>(card, -1));
+            }
+
 
             return attackTargets;
         }
