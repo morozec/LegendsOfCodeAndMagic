@@ -565,7 +565,7 @@ namespace LegendsOfCodeAndMagic
             }
 
             var notKillingGuard = notKillingGuards.FirstOrDefault();
-            if (notKillingGuard != null && attackTargets.Any())
+            if (notKillingGuard != null && allAttackingCreatures.Any())
             {
                 foreach (var card in allAttackingCreatures)
                 {
