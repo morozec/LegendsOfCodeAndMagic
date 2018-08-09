@@ -75,7 +75,7 @@ namespace LegendsOfCodeAndMagic
 
         static IList<int> GetBadCardIds()
         {
-            return new List<int>(){24};
+            return new List<int>(){57, 4};
         }
 
         static IDictionary<int, int> GetManaCurve()
@@ -313,6 +313,7 @@ namespace LegendsOfCodeAndMagic
             for (int i = 0; i < cards.Count; ++i)
             {
                 var card = cards[i];
+                if (badCardIds.Contains(card.CardNumber)) continue;
 
                 var cardWeight = GetCardWeight(card);
                 if (cardWeight > maxWeight)
@@ -420,11 +421,11 @@ namespace LegendsOfCodeAndMagic
             return attackingCards;
         }
 
-        static bool IsGoodTrade(Card myCreature, Card oppCreature, bool hasBetterTableCreatures)
+        static bool IsGoodTrade(Card myCreature, Card oppCreature, bool hasBetterTableCreatures, bool hasWard)
         {
             if (myCreature.IsGuard) return false;
-            if (myCreature.IsWard && !oppCreature.IsWard && myCreature.Attack >= oppCreature.Defense) return true;//мы со щитом убьем с 1 удара
-            if (!myCreature.IsWard && !oppCreature.IsWard && myCreature.Attack >= oppCreature.Defense &&
+            if (myCreature.IsWard && !hasWard && myCreature.Attack >= oppCreature.Defense) return true;//мы со щитом убьем с 1 удара
+            if (!myCreature.IsWard && !hasWard && myCreature.Attack >= oppCreature.Defense &&
                 myCreature.Defense > oppCreature.Attack && !oppCreature.IsLethal) return true; //убьем с 1 удара и не помрем
 
             if (oppCreature.IsLethal && hasBetterTableCreatures) return true;
@@ -516,7 +517,7 @@ namespace LegendsOfCodeAndMagic
                 {
                     var hasBetterTableCreatures = constAllAtackingCreatures.Any(c =>
                         !c.IsWard && c.Attack + c.Defense > attackingCard.Attack + attackingCard.Defense);
-                    var isGoodTrade = IsGoodTrade(attackingCard, targetCreature, hasBetterTableCreatures);
+                    var isGoodTrade = IsGoodTrade(attackingCard, targetCreature, hasBetterTableCreatures, hasWard);
                     if (!isGoodTrade) continue;
 
                     if (attackingCard.Attack >= hpLeft || attackingCard.IsLethal)
