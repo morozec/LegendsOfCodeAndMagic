@@ -70,6 +70,7 @@ namespace LegendsOfCodeAndMagic
     class Player
     {
         private const int BOARD_SIZE = 6;
+        private const double TOLERANCE = 1E-3;
         private static IList<Card> _handCards = new List<Card>();
 
         static IList<int> GetBadCardIds()
@@ -84,28 +85,38 @@ namespace LegendsOfCodeAndMagic
 
         static double GetCardWeight(Card card)
         {
-            if (card.IsCreature && card.Attack == 0) return 0;
-            if (card.IsGreenItem && card.Attack == 0) return 0;
-            if (card.IsRedItem && card.Defense >= 0) return 0;
+            if (card.IsCreature && card.Attack == 0) return -double.MaxValue;
+            if (card.IsGreenItem && card.Attack == 0) return -double.MaxValue;
+            if (card.IsRedItem && card.Defense >= 0) return -double.MaxValue;
 
 
             var weight = 0d;
-            weight += card.Attack;
-            weight += card.Defense;
 
-            if (card.IsWard)
+            if (card.IsLethal)
+            {
+                weight += card.Defense;
+                if (card.IsWard) weight += card.Defense;
+                weight += 1;
+            }
+            else
             {
                 weight += card.Attack;
                 weight += card.Defense;
+
+                if (card.IsWard)
+                {
+                    weight += card.Attack;
+                    weight += card.Defense;
+                }
+
+                weight /= 2;
             }
 
-            if (card.IsLethal) weight += 1;
 
             weight += card.CardDraw;
-
             if (card.IsCreature) weight += 0.1;
 
-            weight /= card.Cost;
+            weight -= card.Cost;
             return weight;
         }
 
@@ -297,7 +308,7 @@ namespace LegendsOfCodeAndMagic
 
         static int PickCard(IList<Card> cards, IDictionary<int, int> manaCurve, IDictionary<int, int> handManaCurve, IList<int> badCardIds)
         {
-            var maxWeight = -1d;
+            var maxWeight = -double.MaxValue;
             int resCardIndex = -1;
             for (int i = 0; i < cards.Count; ++i)
             {
@@ -308,6 +319,15 @@ namespace LegendsOfCodeAndMagic
                 {
                     resCardIndex = i;
                     maxWeight = cardWeight;
+                }
+
+                else if (resCardIndex >= 0 && Math.Abs(cardWeight - maxWeight) < TOLERANCE)
+                {
+                    if (card.Attack > cards[resCardIndex].Attack)
+                    {
+                        resCardIndex = i;
+                        maxWeight = cardWeight;
+                    }
                 }
 
                 //var isOkCard = (card.IsCreature || card.IsGreenItem) && card.Attack > 0 || card.IsRedItem && card.Defense < 0;
@@ -548,10 +568,10 @@ namespace LegendsOfCodeAndMagic
             var notKillingGuard = notKillingGuards.FirstOrDefault();
             if (notKillingGuard != null && allAttackingCreatures.Any())
             {
-                foreach (var card in allAttackingCreatures)
-                {
-                    attackTargets.Add(new Tuple<Card, int>(card, notKillingGuard.InstanceId));
-                }
+                //foreach (var card in allAttackingCreatures)
+                //{
+                //    attackTargets.Add(new Tuple<Card, int>(card, notKillingGuard.InstanceId));
+                //}
 
                 return attackTargets;
             }
