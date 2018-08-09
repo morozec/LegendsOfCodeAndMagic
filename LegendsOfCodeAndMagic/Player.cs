@@ -420,20 +420,29 @@ namespace LegendsOfCodeAndMagic
             return attackingCards;
         }
 
-        static bool IsGoodTrade(Card myCreature, Card oppCreature)
+        static bool IsGoodTrade(Card myCreature, Card oppCreature, bool hasBetterTableCreatures)
         {
             if (myCreature.IsGuard) return false;
             if (myCreature.IsWard && !oppCreature.IsWard && myCreature.Attack >= oppCreature.Defense) return true;//мы со щитом убьем с 1 удара
             if (!myCreature.IsWard && !oppCreature.IsWard && myCreature.Attack >= oppCreature.Defense &&
                 myCreature.Defense > oppCreature.Attack && !oppCreature.IsLethal) return true; //убьем с 1 удара и не помрем
 
+            if (oppCreature.IsLethal && hasBetterTableCreatures) return true;
+
             return oppCreature.Attack > myCreature.Attack && myCreature.Attack - oppCreature.Defense <= 1;
             //return oppCreature.Attack > myCreature.Attack || oppCreature.Attack == myCreature.Attack && oppCreature.Defense > myCreature.Defense;
+        }
+
+        static bool IsKilling(Card sourceCreature, Card destCreature)
+        {
+            if (destCreature.IsWard) return false;
+            if (sourceCreature.IsLethal) return true;
+            return sourceCreature.Attack >= destCreature.Defense;
         }
         
 
         static IList<Card> GetCurrentTargetAttackingCreatures(Card targetCreature, IList<Card> allAtackingCreatures, IList<Card> usedCards,
-            int hpLeft, bool hasWard, bool isNecessaryToKill)
+            int hpLeft, bool hasWard, bool isNecessaryToKill, IList<Card> constAllAtackingCreatures)
         {
             if (!hasWard)
             {
@@ -452,20 +461,37 @@ namespace LegendsOfCodeAndMagic
             }
             else //ищем самого слабого юнита, чтобы снять щит
             {
-                if (!isNecessaryToKill) return new List<Card>();//не занимаемся снятие щита с юнита, который нам не критичен
+                //if (!isNecessaryToKill) return new List<Card>();//не занимаемся снятие щита с юнита, который нам не критичен
 
                 var notLethalCreatures = allAtackingCreatures.Where(c => !c.IsLethal).ToList();
 
-                var breakWardCreature = notLethalCreatures.Any()
-                    ? notLethalCreatures
-                        .OrderBy(c => c.Attack + c.Defense).First()
-                    : allAtackingCreatures.OrderBy(c => c.Attack + c.Defense).FirstOrDefault();
+                Card breakWardCreature = null;
+                if (notLethalCreatures.Any())
+                {
+                    //сначала берем своиз со щитами
+                    breakWardCreature = notLethalCreatures.Where(c => c.IsWard).OrderBy(c => c.Attack + c.Defense)
+                        .FirstOrDefault();
+                }
+
+                if (breakWardCreature == null)
+                {
+                    breakWardCreature = notLethalCreatures.Any()
+                        ? notLethalCreatures
+                            .OrderBy(c => c.Attack + c.Defense).First()
+                        : allAtackingCreatures.OrderBy(c => c.Attack + c.Defense).FirstOrDefault();
+                }
 
                 if (breakWardCreature == null) return new List<Card>();
 
                 var newUsedCards = new List<Card>() {breakWardCreature};
                 var noWardAttackingCreatures =
-                    GetCurrentTargetAttackingCreatures(targetCreature, allAtackingCreatures, newUsedCards, hpLeft, false, true);
+                    GetCurrentTargetAttackingCreatures(targetCreature,
+                        allAtackingCreatures,
+                        newUsedCards,
+                        hpLeft,
+                        false,
+                        isNecessaryToKill,
+                        constAllAtackingCreatures);
 
                 var resCards = new List<Card>() {breakWardCreature};
                 resCards.AddRange(noWardAttackingCreatures);
@@ -484,13 +510,26 @@ namespace LegendsOfCodeAndMagic
 
                 if (!isNecessaryToKill || attackingCard.IsGuard && !targetCreature.IsGuard)
                 {
-                    var isGoodTrade = IsGoodTrade(attackingCard, targetCreature);
+                    var hasBetterTableCreatures = constAllAtackingCreatures.Any(c =>
+                        !c.IsWard && c.Attack + c.Defense > attackingCard.Attack + attackingCard.Defense);
+                    var isGoodTrade = IsGoodTrade(attackingCard, targetCreature, hasBetterTableCreatures);
                     if (!isGoodTrade) continue;
 
                     if (attackingCard.Attack >= hpLeft || attackingCard.IsLethal)
                     {
-                        if (notNecToKillCreature == null || attackingCard.Attack < notNecToKillCreature.Attack)
+                        if (notNecToKillCreature == null)
+                        {
                             notNecToKillCreature = attackingCard;
+                        }
+                        else if (IsKilling(targetCreature, notNecToKillCreature) &&
+                                 !IsKilling(targetCreature, attackingCard))
+                        {
+                            notNecToKillCreature = attackingCard;
+                        }
+                        else if (attackingCard.Attack < notNecToKillCreature.Attack)
+                        {
+                            notNecToKillCreature = attackingCard;
+                        }
                     }
                     continue;
                 }
@@ -503,7 +542,8 @@ namespace LegendsOfCodeAndMagic
                         newUsedCards,
                         hpLeft - attackingCard.Attack,
                         false,
-                        true);
+                        true,
+                        constAllAtackingCreatures);
                 var currDamage = attackingCard.Attack + currMinKillDamageCards.Sum(c => c.Attack);
                 if (currDamage >= hpLeft)
                 {
@@ -529,6 +569,7 @@ namespace LegendsOfCodeAndMagic
         {
             var attackTargets = new List<Tuple<Card, int>>();
             var allAttackingCreatures = GetAllAttackingCreatures(allCreatures, summonningCreatures);
+            var constAllAtackingCreatures = new List<Card>(allAttackingCreatures);
 
             //foreach (var card in allAttackingCreatures)
             //    attackTargets.Add(card, -1);
@@ -551,7 +592,8 @@ namespace LegendsOfCodeAndMagic
                     new List<Card>(),
                     guard.Defense,
                     guard.IsWard,
-                    true);
+                    true,
+                    constAllAtackingCreatures);
 
                 if (!guardAttackingCreatures.Any())
                 {
@@ -598,7 +640,8 @@ namespace LegendsOfCodeAndMagic
                     new List<Card>(),
                     creature.Defense,
                     creature.IsWard,
-                    isNecessaryToKill);
+                    isNecessaryToKill,
+                    constAllAtackingCreatures);
 
                 foreach (var ac in currAttackingCreatures)
                 {
