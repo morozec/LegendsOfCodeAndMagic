@@ -78,6 +78,11 @@ namespace LegendsOfCodeAndMagic
             return new List<int>(){57, 4};
         }
 
+        static IList<int> GetGoodCardIds()
+        {
+            return new List<int>(){151};
+        }
+
         static IDictionary<int, int> GetManaCurve()
         {
             return new Dictionary<int, int>() {{1, 3}, {2, 4}, {3, 5}, {4, 6}, {5, 5}, {6, 4}, {7, 3}};
@@ -211,8 +216,7 @@ namespace LegendsOfCodeAndMagic
                 {
                     var manaCurve = GetManaCurve();
                     var handManaCuvre = GetHandManaCuvre(_handCards);
-                    var badCardIds = GetBadCardIds();
-                    var pickedCardId = PickCard(allCards, manaCurve, handManaCuvre, badCardIds);
+                    var pickedCardId = PickCard(allCards, manaCurve, handManaCuvre);
                     _handCards.Add(allCards[pickedCardId]);
                     Console.WriteLine($"PICK {pickedCardId}");
                     continue;
@@ -281,7 +285,8 @@ namespace LegendsOfCodeAndMagic
                 var attackTargets = GetAttackTargets(allCards.Where(t => t.IsCreature).ToList(),
                     summonningCreatures,
                     oppPlayerData.PlayerHealth,
-                    myPlayerData.PlayerHealth);
+                    myPlayerData.PlayerHealth,
+                    redItemsTargets);
 
                 var gotCards = new List<Card>();
                 foreach (var at in attackTargets)//сначала сносим стенки
@@ -306,14 +311,18 @@ namespace LegendsOfCodeAndMagic
             }
         }
 
-        static int PickCard(IList<Card> cards, IDictionary<int, int> manaCurve, IDictionary<int, int> handManaCurve, IList<int> badCardIds)
+        static int PickCard(IList<Card> cards, IDictionary<int, int> manaCurve, IDictionary<int, int> handManaCurve)
         {
+            var badCardIds = GetBadCardIds();
+            var goodCardIds = GetGoodCardIds();
+
             var maxWeight = -double.MaxValue;
             int resCardIndex = -1;
             for (int i = 0; i < cards.Count; ++i)
             {
                 var card = cards[i];
                 if (badCardIds.Contains(card.CardNumber)) continue;
+                if (goodCardIds.Contains(card.CardNumber)) return i;
 
                 var cardWeight = GetCardWeight(card);
                 if (cardWeight > maxWeight)
@@ -570,7 +579,7 @@ namespace LegendsOfCodeAndMagic
             return attackingCreatures.Sum(c => c.Attack) >= oppHeroHp;
         }
 
-        static IList<Tuple<Card, int>> GetAttackTargets(IList<Card> allCreatures, IList<Card> summonningCreatures, int oppHeroHp, int myHeroHp)
+        static IList<Tuple<Card, int>> GetAttackTargets(IList<Card> allCreatures, IList<Card> summonningCreatures, int oppHeroHp, int myHeroHp, IDictionary<Card, int> redItemsTargets)
         {
             var attackTargets = new List<Tuple<Card, int>>();
             var allAttackingCreatures = GetAllAttackingCreatures(allCreatures, summonningCreatures);
@@ -580,7 +589,7 @@ namespace LegendsOfCodeAndMagic
             //    attackTargets.Add(card, -1);
 
             var oppGuards = new List<Card>();
-            foreach (var card in allCreatures.Where(c => c.Location == -1))
+            foreach (var card in allCreatures.Where(c => c.Location == -1 && !redItemsTargets.Values.Contains(c.InstanceId)))
             {
                 if (card.IsGuard) oppGuards.Add(card);
             }
@@ -633,7 +642,9 @@ namespace LegendsOfCodeAndMagic
             }
 
             //идем в размен
-            var orderedOppCreatures = allCreatures.Where(c => c.Location == -1 && !c.IsGuard).OrderByDescending(c => c.Attack + c.Defense).ToList();
+            var orderedOppCreatures = allCreatures
+                .Where(c => c.Location == -1 && !c.IsGuard && !redItemsTargets.Values.Contains(c.InstanceId))
+                .OrderByDescending(c => c.Attack + c.Defense).ToList();
 
             var isNecessaryToKill = IsKillingOppHero(myHeroHp, allCreatures.Where(c => c.Location == -1 && !c.IsGuard).ToList());
             Console.Error.WriteLine($"I CAN BE KILLED: {isNecessaryToKill}");
@@ -746,9 +757,22 @@ namespace LegendsOfCodeAndMagic
                 if (Math.Abs(redItem.Defense) < creature.Defense) continue;//TODO: можно наносить часть урона
                 if (creature.IsWard && redItem.Abilities != "BCDGLW") continue; //TODO: абилки врага - это не только щит
 
-                if (maxHpOppCreature == null || creature.Defense > maxHpOppCreature.Defense)
+                if (redItem.Abilities == "BCDGLW")
                 {
-                    maxHpOppCreature = creature;
+                    if (creature.Defense > 5)
+                    {
+                        if (maxHpOppCreature == null || creature.Defense > maxHpOppCreature.Defense)
+                        {
+                            maxHpOppCreature = creature;
+                        }
+                    }
+                }
+                else
+                {
+                    if (maxHpOppCreature == null || creature.Defense > maxHpOppCreature.Defense)
+                    {
+                        maxHpOppCreature = creature;
+                    }
                 }
             }
 
