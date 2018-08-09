@@ -493,9 +493,13 @@ namespace LegendsOfCodeAndMagic
                         isNecessaryToKill,
                         constAllAtackingCreatures);
 
-                var resCards = new List<Card>() {breakWardCreature};
-                resCards.AddRange(noWardAttackingCreatures);
-                return resCards;
+                if (noWardAttackingCreatures.Any())
+                {
+                    var resCards = new List<Card>() {breakWardCreature};
+                    resCards.AddRange(noWardAttackingCreatures);
+                    return resCards;
+                }
+                return new List<Card>();
             }
 
 
