@@ -432,14 +432,16 @@ namespace LegendsOfCodeAndMagic
 
         static bool IsGoodTrade(Card myCreature, Card oppCreature, bool hasBetterTableCreatures, bool hasWard)
         {
-            if (myCreature.IsGuard) return false;
+            //if (myCreature.IsGuard) return false;
             if (myCreature.IsWard && !hasWard && myCreature.Attack >= oppCreature.Defense) return true;//мы со щитом убьем с 1 удара
             if (!myCreature.IsWard && !hasWard && myCreature.Attack >= oppCreature.Defense &&
                 myCreature.Defense > oppCreature.Attack && !oppCreature.IsLethal) return true; //убьем с 1 удара и не помрем
 
             if (oppCreature.IsLethal && hasBetterTableCreatures) return true;
 
-            return oppCreature.Attack > myCreature.Attack && myCreature.Attack - oppCreature.Defense <= 1;
+            if (oppCreature.Attack > myCreature.Attack && myCreature.Attack - oppCreature.Defense <= 1) return true;
+            if (oppCreature.Attack + oppCreature.Defense - myCreature.Attack - myCreature.Defense >= 2) return true;
+            return false;
             //return oppCreature.Attack > myCreature.Attack || oppCreature.Attack == myCreature.Attack && oppCreature.Defense > myCreature.Defense;
         }
 
@@ -759,7 +761,7 @@ namespace LegendsOfCodeAndMagic
 
                 if (redItem.Abilities == "BCDGLW")
                 {
-                    if (creature.Defense > 5)
+                    if (creature.Defense > 5 || creature.IsWard && creature.Defense + creature.Attack >= 5)
                     {
                         if (maxHpOppCreature == null || creature.Defense > maxHpOppCreature.Defense)
                         {
