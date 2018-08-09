@@ -82,6 +82,33 @@ namespace LegendsOfCodeAndMagic
             return new Dictionary<int, int>() {{1, 3}, {2, 4}, {3, 5}, {4, 6}, {5, 5}, {6, 4}, {7, 3}};
         }
 
+        static double GetCardWeight(Card card)
+        {
+            if (card.IsCreature && card.Attack == 0) return 0;
+            if (card.IsGreenItem && card.Attack == 0) return 0;
+            if (card.IsRedItem && card.Defense >= 0) return 0;
+
+
+            var weight = 0d;
+            weight += card.Attack;
+            weight += card.Defense;
+
+            if (card.IsWard)
+            {
+                weight += card.Attack;
+                weight += card.Defense;
+            }
+
+            if (card.IsLethal) weight += 1;
+
+            weight += card.CardDraw;
+
+            if (card.IsCreature) weight += 0.1;
+
+            weight /= card.Cost;
+            return weight;
+        }
+
         static IDictionary<int, int> GetHandManaCuvre(IList<Card> handCards)
         {
             var handManaCurve = new Dictionary<int, int>();
@@ -270,104 +297,48 @@ namespace LegendsOfCodeAndMagic
 
         static int PickCard(IList<Card> cards, IDictionary<int, int> manaCurve, IDictionary<int, int> handManaCurve, IList<int> badCardIds)
         {
-            var maxLack = 0;
-            int maxLackCardIndex = -1;
+            var maxWeight = -1d;
+            int resCardIndex = -1;
             for (int i = 0; i < cards.Count; ++i)
             {
                 var card = cards[i];
-                //if (badCardIds.Contains(card.CardNumber)) continue;
 
-                var isOkCard = (card.IsCreature || card.IsGreenItem) && card.Attack > 0 || card.IsRedItem && card.Defense < 0;
-                if (!isOkCard) continue;
-
-                var cost = card.Cost;
-                if (cost == 0) cost = 1;
-                else if (cost > 7) cost = 7;
-
-                var manaCurveLack = manaCurve[cost] - handManaCurve[cost];
-                if (maxLackCardIndex == -1 || manaCurveLack > maxLack)
+                var cardWeight = GetCardWeight(card);
+                if (cardWeight > maxWeight)
                 {
-                    maxLackCardIndex = i;
-                    maxLack = manaCurveLack;
+                    resCardIndex = i;
+                    maxWeight = cardWeight;
                 }
-                else if (manaCurveLack == maxLack)
-                {
-                    if (card.Attack > cards[maxLackCardIndex].Attack)
-                    {
-                        maxLackCardIndex = i;
-                        maxLack = manaCurveLack;
-                    }
-                    else if (card.Attack == cards[maxLackCardIndex].Attack)
-                    {
-                        maxLackCardIndex = i;
-                        maxLack = manaCurveLack;
-                    }
-                }
+
+                //var isOkCard = (card.IsCreature || card.IsGreenItem) && card.Attack > 0 || card.IsRedItem && card.Defense < 0;
+                //if (!isOkCard) continue;
+
+                //var cost = card.Cost;
+                //if (cost == 0) cost = 1;
+                //else if (cost > 7) cost = 7;
+
+                //var manaCurveLack = manaCurve[cost] - handManaCurve[cost];
+                //if (maxLackCardIndex == -1 || manaCurveLack > maxLack)
+                //{
+                //    maxLackCardIndex = i;
+                //    maxLack = manaCurveLack;
+                //}
+                //else if (manaCurveLack == maxLack)
+                //{
+                //    if (card.Attack > cards[maxLackCardIndex].Attack)
+                //    {
+                //        maxLackCardIndex = i;
+                //        maxLack = manaCurveLack;
+                //    }
+                //    else if (card.Attack == cards[maxLackCardIndex].Attack)
+                //    {
+                //        maxLackCardIndex = i;
+                //        maxLack = manaCurveLack;
+                //    }
+                //}
             }
 
-            return maxLackCardIndex >= 0 ? maxLackCardIndex : 0;
-
-            //var cardId = -1;
-            //for (int i = 0; i < cards.Count; ++i)
-            //{
-            //    var card = cards[i];
-            //    var isOkCard = (card.IsCreature || card.IsGreenItem) && card.Attack > 0;
-
-            //    if (!isOkCard) continue;
-            //    if (cardId == -1)
-            //    {
-            //        cardId = i;
-            //        continue;
-            //    }
-
-            //    //if (card.IsCharge)
-            //    //{
-            //        //if (!cards[cardId].IsCharge)
-            //        //{
-            //        //    cardId = i;
-            //        //}
-            //        //else
-            //        //{
-            //            if (card.Cost < cards[cardId].Cost)
-            //            {
-            //                cardId = i;
-            //            }
-            //            else if (card.Cost == cards[cardId].Cost && card.Attack > cards[cardId].Attack)
-            //            {
-            //                cardId = i;
-            //            }
-            //            else if (card.Cost == cards[cardId].Cost && card.Attack == cards[cardId].Attack)
-            //            {
-            //                if (card.Defense > cards[cardId].Defense)
-            //                {
-            //                    cardId = i;
-            //                }
-            //            }
-            //        //}
-            //    //}
-            //    //else
-            //    //{
-            //    //    if (cards[cardId].IsCharge) continue;
-
-            //    //    if (card.Cost < cards[cardId].Cost)
-            //    //    {
-            //    //        cardId = i;
-            //    //    }
-            //    //    else if (card.Cost == cards[cardId].Cost && card.Attack > cards[cardId].Attack)
-            //    //    {
-            //    //        cardId = i;
-            //    //    }
-            //    //    else if (card.Cost == cards[cardId].Cost && card.Attack == cards[cardId].Attack)
-            //    //    {
-            //    //        if (card.Defense > cards[cardId].Defense)
-            //    //        {
-            //    //            cardId = i;
-            //    //        }
-            //    //    }
-            //    //}
-            //}
-
-            //return cardId >= 0 ? cardId : 0;
+            return resCardIndex;
         }
 
         #region SUMMON
@@ -491,12 +462,12 @@ namespace LegendsOfCodeAndMagic
             {
                 if (usedCards.Contains(attackingCard)) continue;
 
-                if (!isNecessaryToKill || attackingCard.IsGuard)
+                if (!isNecessaryToKill || attackingCard.IsGuard && !targetCreature.IsGuard)
                 {
                     var isGoodTrade = IsGoodTrade(attackingCard, targetCreature);
                     if (!isGoodTrade) continue;
 
-                    if (attackingCard.Attack >= hpLeft)
+                    if (attackingCard.Attack >= hpLeft || attackingCard.IsLethal)
                     {
                         if (notNecToKillCreature == null || attackingCard.Attack < notNecToKillCreature.Attack)
                             notNecToKillCreature = attackingCard;
@@ -730,7 +701,7 @@ namespace LegendsOfCodeAndMagic
             return itemTargets;
         }
 
-
+          
         static Card GetBlueItemCreature(IList<Card> allCreatures)
         {
             return null;
