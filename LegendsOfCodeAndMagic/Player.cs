@@ -10,8 +10,13 @@ namespace LegendsOfCodeAndMagic
     class TradeResult
     {
         public int MyDeadCreaturesNumber { get; set; }
-        public int MySumDamage { get; set; }
+        public IList<Card> MyCreatures { get; set; }
         public bool IsGoodTrade { get; set; }
+
+        public int MySumDamage
+        {
+            get { return MyCreatures.Sum(c => c.Attack); }
+        }
     }
 
     class PlayerData
@@ -454,14 +459,13 @@ namespace LegendsOfCodeAndMagic
 
         static TradeResult GetTradeResult(IList<Card> myCreatures, Card oppCreature)
         {
-            var mySumDamage = myCreatures.Sum(c => c.Attack);
             var myDeadCreatures = myCreatures.Where(c => IsKilling(oppCreature, c)).ToList();
             var isGoodTrade =  oppCreature.Attack + oppCreature.Defense >= myDeadCreatures.Sum(c => c.Attack + c.Defense);
 
             return new TradeResult()
             {
                 IsGoodTrade = isGoodTrade,
-                MySumDamage = mySumDamage,
+                MyCreatures = myCreatures,
                 MyDeadCreaturesNumber = myDeadCreatures.Count
             };
         }
@@ -536,41 +540,12 @@ namespace LegendsOfCodeAndMagic
             }
 
 
-            var minKillDamageCards = new List<Card>();
             TradeResult bestTradeResult = null;
-            if (hpLeft <= 0) return minKillDamageCards;
-
-            //Card notNecToKillCreature = null;
+            if (hpLeft <= 0) return new List<Card>();
 
             foreach (var attackingCard in allAtackingCreatures)
             {
                 if (usedCards.Contains(attackingCard)) continue;
-
-                //if (!isNecessaryToKill || attackingCard.IsGuard && !targetCreature.IsGuard)
-                //{
-                //    var hasBetterTableCreatures = constAllAtackingCreatures.Any(c =>
-                //        !c.IsWard && c.Attack + c.Defense > attackingCard.Attack + attackingCard.Defense);
-                //    var isGoodTrade = GetTradeResult(attackingCard, targetCreature, hasBetterTableCreatures, hasWard);
-                //    if (!isGoodTrade) continue;
-
-                //    if (attackingCard.Attack >= hpLeft || attackingCard.IsLethal)
-                //    {
-                //        if (notNecToKillCreature == null)
-                //        {
-                //            notNecToKillCreature = attackingCard;
-                //        }
-                //        else if (IsKilling(targetCreature, notNecToKillCreature) &&
-                //                 !IsKilling(targetCreature, attackingCard))
-                //        {
-                //            notNecToKillCreature = attackingCard;
-                //        }
-                //        else if (attackingCard.Attack < notNecToKillCreature.Attack)
-                //        {
-                //            notNecToKillCreature = attackingCard;
-                //        }
-                //    }
-                //    continue;
-                //}
 
                 var newUsedCards = new List<Card>(usedCards) {attackingCard};
                 var currMinKillDamageCards =
@@ -583,34 +558,38 @@ namespace LegendsOfCodeAndMagic
                         true,
                         constAllAtackingCreatures);
                 var currDamage = attackingCard.Attack + currMinKillDamageCards.Sum(c => c.Attack);
-                if (currDamage >= hpLeft)
+                if (currDamage >= hpLeft)//хватит урона, чтобы убить
                 {
                     var tmpMinKillDamageCards = new List<Card>(){attackingCard};
                     tmpMinKillDamageCards.AddRange(currMinKillDamageCards);
 
-                    var needTrade = isNecessaryToKill;
                     var tradeResult = GetTradeResult(tmpMinKillDamageCards, targetCreature);
-                    
-                    if (isNecessaryToKill || tradeResult.IsGoodTrade)
+                    if (isNecessaryToKill || tradeResult.IsGoodTrade) //важно убить сущ-во, либо это выгодный размен
                     {
                         if (bestTradeResult == null)
                         {
-                            minKillDamageCards = new List<Card>() {attackingCard};
-                            minKillDamageCards.AddRange(currMinKillDamageCards);
+                            bestTradeResult = tradeResult;
                         }
                         else
                         {
-
-
-                            || currDamage < minKillDamageCards.Sum(c => c.Attack)
+                            if (tradeResult.MyDeadCreaturesNumber < bestTradeResult.MyDeadCreaturesNumber)
+                            {
+                                bestTradeResult = tradeResult;
+                            }
+                            else if (tradeResult.MyDeadCreaturesNumber == bestTradeResult.MyDeadCreaturesNumber)
+                            {
+                                if (tradeResult.MySumDamage < bestTradeResult.MySumDamage)
+                                {
+                                    bestTradeResult = tradeResult;
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            //if (notNecToKillCreature != null) return new List<Card>(){notNecToKillCreature};
-
-            return minKillDamageCards;
+            if (bestTradeResult == null) return new List<Card>();
+            return bestTradeResult.MyCreatures;
         }
 
         static bool IsKillingOppHero(int oppHeroHp, IList<Card> attackingCreatures)
