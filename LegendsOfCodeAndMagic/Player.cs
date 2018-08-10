@@ -7,6 +7,13 @@ using System.Threading.Tasks;
 
 namespace LegendsOfCodeAndMagic
 {
+    class TradeResult
+    {
+        public int MyDeadCreaturesNumber { get; set; }
+        public int MySumDamage { get; set; }
+        public bool IsGoodTrade { get; set; }
+    }
+
     class PlayerData
     {
         public int PlayerHealth { get; set; }
@@ -445,6 +452,20 @@ namespace LegendsOfCodeAndMagic
             //return oppCreature.Attack > myCreature.Attack || oppCreature.Attack == myCreature.Attack && oppCreature.Defense > myCreature.Defense;
         }
 
+        static TradeResult GetTradeResult(IList<Card> myCreatures, Card oppCreature)
+        {
+            var mySumDamage = myCreatures.Sum(c => c.Attack);
+            var myDeadCreatures = myCreatures.Where(c => IsKilling(oppCreature, c)).ToList();
+            var isGoodTrade =  oppCreature.Attack + oppCreature.Defense >= myDeadCreatures.Sum(c => c.Attack + c.Defense);
+
+            return new TradeResult()
+            {
+                IsGoodTrade = isGoodTrade,
+                MySumDamage = mySumDamage,
+                MyDeadCreaturesNumber = myDeadCreatures.Count
+            };
+        }
+
         static bool IsKilling(Card sourceCreature, Card destCreature)
         {
             if (destCreature.IsWard) return false;
@@ -516,39 +537,40 @@ namespace LegendsOfCodeAndMagic
 
 
             var minKillDamageCards = new List<Card>();
+            TradeResult bestTradeResult = null;
             if (hpLeft <= 0) return minKillDamageCards;
 
-            Card notNecToKillCreature = null;
+            //Card notNecToKillCreature = null;
 
             foreach (var attackingCard in allAtackingCreatures)
             {
                 if (usedCards.Contains(attackingCard)) continue;
 
-                if (!isNecessaryToKill || attackingCard.IsGuard && !targetCreature.IsGuard)
-                {
-                    var hasBetterTableCreatures = constAllAtackingCreatures.Any(c =>
-                        !c.IsWard && c.Attack + c.Defense > attackingCard.Attack + attackingCard.Defense);
-                    var isGoodTrade = IsGoodTrade(attackingCard, targetCreature, hasBetterTableCreatures, hasWard);
-                    if (!isGoodTrade) continue;
+                //if (!isNecessaryToKill || attackingCard.IsGuard && !targetCreature.IsGuard)
+                //{
+                //    var hasBetterTableCreatures = constAllAtackingCreatures.Any(c =>
+                //        !c.IsWard && c.Attack + c.Defense > attackingCard.Attack + attackingCard.Defense);
+                //    var isGoodTrade = GetTradeResult(attackingCard, targetCreature, hasBetterTableCreatures, hasWard);
+                //    if (!isGoodTrade) continue;
 
-                    if (attackingCard.Attack >= hpLeft || attackingCard.IsLethal)
-                    {
-                        if (notNecToKillCreature == null)
-                        {
-                            notNecToKillCreature = attackingCard;
-                        }
-                        else if (IsKilling(targetCreature, notNecToKillCreature) &&
-                                 !IsKilling(targetCreature, attackingCard))
-                        {
-                            notNecToKillCreature = attackingCard;
-                        }
-                        else if (attackingCard.Attack < notNecToKillCreature.Attack)
-                        {
-                            notNecToKillCreature = attackingCard;
-                        }
-                    }
-                    continue;
-                }
+                //    if (attackingCard.Attack >= hpLeft || attackingCard.IsLethal)
+                //    {
+                //        if (notNecToKillCreature == null)
+                //        {
+                //            notNecToKillCreature = attackingCard;
+                //        }
+                //        else if (IsKilling(targetCreature, notNecToKillCreature) &&
+                //                 !IsKilling(targetCreature, attackingCard))
+                //        {
+                //            notNecToKillCreature = attackingCard;
+                //        }
+                //        else if (attackingCard.Attack < notNecToKillCreature.Attack)
+                //        {
+                //            notNecToKillCreature = attackingCard;
+                //        }
+                //    }
+                //    continue;
+                //}
 
                 var newUsedCards = new List<Card>(usedCards) {attackingCard};
                 var currMinKillDamageCards =
@@ -563,15 +585,30 @@ namespace LegendsOfCodeAndMagic
                 var currDamage = attackingCard.Attack + currMinKillDamageCards.Sum(c => c.Attack);
                 if (currDamage >= hpLeft)
                 {
-                    if (!minKillDamageCards.Any() || currDamage < minKillDamageCards.Sum(c => c.Attack))
+                    var tmpMinKillDamageCards = new List<Card>(){attackingCard};
+                    tmpMinKillDamageCards.AddRange(currMinKillDamageCards);
+
+                    var needTrade = isNecessaryToKill;
+                    var tradeResult = GetTradeResult(tmpMinKillDamageCards, targetCreature);
+                    
+                    if (isNecessaryToKill || tradeResult.IsGoodTrade)
                     {
-                        minKillDamageCards = new List<Card>() {attackingCard};
-                        minKillDamageCards.AddRange(currMinKillDamageCards);
+                        if (bestTradeResult == null)
+                        {
+                            minKillDamageCards = new List<Card>() {attackingCard};
+                            minKillDamageCards.AddRange(currMinKillDamageCards);
+                        }
+                        else
+                        {
+
+
+                            || currDamage < minKillDamageCards.Sum(c => c.Attack)
+                        }
                     }
                 }
             }
 
-            if (notNecToKillCreature != null) return new List<Card>(){notNecToKillCreature};
+            //if (notNecToKillCreature != null) return new List<Card>(){notNecToKillCreature};
 
             return minKillDamageCards;
         }
