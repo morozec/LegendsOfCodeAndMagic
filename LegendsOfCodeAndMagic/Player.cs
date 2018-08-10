@@ -7,15 +7,50 @@ using System.Threading.Tasks;
 
 namespace LegendsOfCodeAndMagic
 {
+    class AttackResult
+    {
+        public IList<TradeResult> TradeResults { get; set; }
+
+    }
+
     class TradeResult
     {
-        public int MyDeadCreaturesNumber { get; set; }
-        public IList<Card> MyCreatures { get; set; }
-        public bool IsGoodTrade { get; set; }
+        public TradeResult()
+        {
+            MyCreatures = new List<Card>();
+        }
 
+        public IList<Card> MyCreatures { get; set; }
+        public Card OppCreature { get; set; }
+
+        public int MyDeadCreaturesNumber { get; set; }
+        public bool IsGoodTrade { get; set; }
         public int MySumDamage
         {
             get { return MyCreatures.Sum(c => c.Attack); }
+        }
+
+
+        /// <summary>
+        /// Сравнение 2 вариантов размена
+        /// </summary>
+        /// <param name="result1"></param>
+        /// <param name="result2"></param>
+        /// <returns>-1, елси лучше 1 результат. 1, если лучше 2 результат. 0, если результаты равны</returns>
+        public static int GetResultComparison(TradeResult result1, TradeResult result2)
+        {
+            if (result1 == null && result2 == null) return 0;
+            if (result1 == null) return 1;
+            if (result2 == null) return -1;
+
+            if (result1.IsGoodTrade && !result2.IsGoodTrade) return -1;
+            if (!result1.IsGoodTrade && result2.IsGoodTrade) return 1;
+
+            var deadCreaturesDiff = result1.MyDeadCreaturesNumber - result2.MyDeadCreaturesNumber;
+            if (deadCreaturesDiff != 0) return deadCreaturesDiff;//если убили больше моих в 1 случае, 2 варинат лучше
+
+            var sumDamageDiff = result1.MySumDamage - result2.MySumDamage;
+            return sumDamageDiff; //если нанесли больше урона в первом случае, 2 варант лучше (в 1 наносим лишний урон)
         }
     }
 
@@ -63,6 +98,21 @@ namespace LegendsOfCodeAndMagic
             MyHealthChange = myHealthChange;
             OpponentHealthChange = opponentHealthChange;
             CardDraw = cardDraw;
+        }
+
+        public Card(Card card)
+        {
+            CardNumber = card.CardNumber;
+            InstanceId = card.InstanceId;
+            Location = card.Location;
+            CardType = card.CardType;
+            Cost = card.Cost;
+            Attack = card.Attack;
+            Defense = card.Defense;
+            Abilities = card.Abilities;
+            MyHealthChange = card.MyHealthChange;
+            OpponentHealthChange = card.OpponentHealthChange;
+            CardDraw = card.CardDraw;
         }
 
         public bool IsBreakthrough => Abilities[0] == 'B';
@@ -265,14 +315,18 @@ namespace LegendsOfCodeAndMagic
                 var greenItemsTargets = UseGreenItems(allCards.Where(c => c.IsGreenItem).ToList(),
                     manaLeft,
                     allCards.Where(c => c.IsCreature).ToList(),
-                    summonningCreatures);
-                foreach (var it in greenItemsTargets)
+                    summonningCreatures,
+                    oppPlayerData.PlayerHealth,
+                    myPlayerData.PlayerHealth,
+                    redItemsTargets);
+                foreach (var item in greenItemsTargets.Keys.ToList())
                 {
-                    manaLeft -= it.Key.Cost;
-                    var targetCreature = allCards.Single(c => c.InstanceId == it.Value);
-                    targetCreature.Attack += it.Key.Attack;
-                    targetCreature.Defense += it.Key.Defense;
-                    resultStr += $"USE {it.Key.InstanceId} {it.Value};";
+                    manaLeft -= item.Cost;
+                    var targetCreature = allCards.Single(c => c.InstanceId == greenItemsTargets[item]);
+                    UpdateCreatureWithItem(targetCreature, item);
+                    //targetCreature.Attack += it.Key.Attack;
+                    //targetCreature.Defense += it.Key.Defense;
+                    resultStr += $"USE {item.InstanceId} {greenItemsTargets[item]};";
                 }
 
                 
@@ -294,26 +348,21 @@ namespace LegendsOfCodeAndMagic
                     resultStr += $"USE {it.Key.InstanceId} {it.Value};";
                 }
 
-                var attackTargets = GetAttackTargets(allCards.Where(t => t.IsCreature).ToList(),
-                    summonningCreatures,
+                var allCreatures = allCards.Where(t => t.IsCreature).ToList();
+                var allAtackingCreatures = GetAllAttackingCreatures(allCreatures, summonningCreatures);
+                var attackTargets = GetAttackTargets(allCreatures,
+                    allAtackingCreatures,
                     oppPlayerData.PlayerHealth,
                     myPlayerData.PlayerHealth,
                     redItemsTargets);
 
-                var gotCards = new List<Card>();
-                foreach (var at in attackTargets)//сначала сносим стенки
+                foreach (var at in attackTargets)
                 {
-                    var target = allCards.SingleOrDefault(c => c.InstanceId == at.Item2 && c.IsGuard);
-                    if (target != null)
-                    {
-                        resultStr += $"ATTACK {at.Item1.InstanceId} {at.Item2};";
-                        gotCards.Add(at.Item1);
-                    }
+                    var targetId = at.OppCreature != null ? at.OppCreature.InstanceId : -1;
+                    foreach (var myCreature in at.MyCreatures)
+                        resultStr += $"ATTACK {myCreature.InstanceId} {targetId};";
                 }
-                foreach (var at in attackTargets.Where(x => !gotCards.Contains(x.Item1)))
-                {
-                    resultStr += $"ATTACK {at.Item1.InstanceId} {at.Item2};";
-                }
+               
 
                 Console.WriteLine(resultStr);
 
@@ -321,6 +370,23 @@ namespace LegendsOfCodeAndMagic
                 // To debug: Console.Error.WriteLine("Debug messages...");
 
             }
+        }
+
+        static int CompareTradeResultLists(IList<TradeResult> tradeResults1, IList<TradeResult> tradeResults2)
+        {
+            if (tradeResults1.Any(x => x.IsGoodTrade && x.OppCreature == null)) return -1;//убьем героя врага
+            if (tradeResults2.Any(x => x.IsGoodTrade && x.OppCreature == null)) return 1;//убьем героя врага
+
+            var goodResultsDiff = tradeResults1.Count(x => x.IsGoodTrade) - tradeResults2.Count(x => x.IsGoodTrade);
+            if (goodResultsDiff != 0) return -goodResultsDiff;
+
+            var myDeadCreaturesDiff = tradeResults1.Sum(x => x.MyDeadCreaturesNumber) - tradeResults2.Sum(x => x.MyDeadCreaturesNumber);
+            if (myDeadCreaturesDiff != 0) return myDeadCreaturesDiff;
+
+            var resultsDiff = tradeResults1.Count - tradeResults2.Count;
+            if (resultsDiff != 0) return -resultsDiff;
+
+            return 0;
         }
 
         static int PickCard(IList<Card> cards, IDictionary<int, int> manaCurve, IDictionary<int, int> handManaCurve)
@@ -426,10 +492,10 @@ namespace LegendsOfCodeAndMagic
 
         #region ATTACK
 
-        static IList<Card> GetAllAttackingCreatures(IList<Card> allCards, IList<Card> summonningCards)
+        static IList<Card> GetAllAttackingCreatures(IList<Card> allCreatures, IList<Card> summonningCards)
         {
             var attackingCards = new List<Card>();
-            foreach (var card in allCards.Where(c => c.Location == 1 && c.Attack > 0))
+            foreach (var card in allCreatures.Where(c => c.Location == 1 && c.Attack > 0))
             {
                 attackingCards.Add(card);
             }
@@ -466,19 +532,33 @@ namespace LegendsOfCodeAndMagic
             {
                 IsGoodTrade = isGoodTrade,
                 MyCreatures = myCreatures,
+                OppCreature = oppCreature,
                 MyDeadCreaturesNumber = myDeadCreatures.Count
             };
         }
 
-        static bool IsKilling(Card sourceCreature, Card destCreature)
+        static bool IsKilling(Card attackingCreature, Card defendingCreature)
         {
-            if (destCreature.IsWard) return false;
-            if (sourceCreature.IsLethal) return true;
-            return sourceCreature.Attack >= destCreature.Defense;
+            if (defendingCreature.IsWard) return false;
+            if (attackingCreature.IsLethal) return true;
+            return attackingCreature.Attack >= defendingCreature.Defense;
+        }
+
+        static bool IsKilling(IList<Card> attackingCreatures, Card defendingCreature)
+        {
+            var hpLeft = defendingCreature.Defense;
+            for (int i = 0; i < attackingCreatures.Count; ++i)
+            {
+                if (defendingCreature.IsWard && i == 0) continue;//сняли щит
+                if (attackingCreatures[i].IsLethal) return true;
+                hpLeft -= attackingCreatures[i].Attack;
+            }
+
+            return hpLeft <= 0;
         }
         
 
-        static IList<Card> GetCurrentTargetAttackingCreatures(Card targetCreature, IList<Card> allAtackingCreatures, IList<Card> usedCards,
+        static TradeResult GetTargetCreatureTradeResult(Card targetCreature, IList<Card> allAtackingCreatures, IList<Card> usedCards,
             int hpLeft, bool hasWard, bool isNecessaryToKill, IList<Card> constAllAtackingCreatures)
         {
             if (!hasWard)
@@ -493,133 +573,135 @@ namespace LegendsOfCodeAndMagic
                     //ищем юнита с ядом
                     var lethalCreature = allAtackingCreatures.Where(c => c.IsLethal).OrderBy(c => c.Attack + c.Defense)
                         .FirstOrDefault();
-                    if (lethalCreature != null) return new List<Card>() {lethalCreature};
+                    if (lethalCreature != null)
+                        return new TradeResult()
+                        {
+                            IsGoodTrade = true,
+                            MyCreatures = new List<Card>() {lethalCreature},
+                            OppCreature = targetCreature,
+                            MyDeadCreaturesNumber = IsKilling(targetCreature, lethalCreature) ? 1 : 0
+                        };
                 }
             }
-            else //ищем самого слабого юнита, чтобы снять щит
-            {
-                //if (!isNecessaryToKill) return new List<Card>();//не занимаемся снятие щита с юнита, который нам не критичен
+            //else //ищем самого слабого юнита, чтобы снять щит
+            //{
+            //    //if (!isNecessaryToKill) return new List<Card>();//не занимаемся снятие щита с юнита, который нам не критичен
 
-                var notLethalCreatures = allAtackingCreatures.Where(c => !c.IsLethal).ToList();
+            //    var notLethalCreatures = allAtackingCreatures.Where(c => !c.IsLethal).ToList();
 
-                Card breakWardCreature = null;
-                if (notLethalCreatures.Any())
-                {
-                    //сначала берем своиз со щитами
-                    breakWardCreature = notLethalCreatures.Where(c => c.IsWard).OrderBy(c => c.Attack + c.Defense)
-                        .FirstOrDefault();
-                }
+            //    Card breakWardCreature = null;
+            //    if (notLethalCreatures.Any())
+            //    {
+            //        //сначала берем своих со щитами
+            //        breakWardCreature = notLethalCreatures.Where(c => c.IsWard).OrderBy(c => c.Attack + c.Defense)
+            //            .FirstOrDefault();
+            //    }
 
-                if (breakWardCreature == null)
-                {
-                    breakWardCreature = notLethalCreatures.Any()
-                        ? notLethalCreatures
-                            .OrderBy(c => c.Attack + c.Defense).First()
-                        : allAtackingCreatures.OrderBy(c => c.Attack + c.Defense).FirstOrDefault();
-                }
+            //    if (breakWardCreature == null)
+            //    {
+            //        breakWardCreature = notLethalCreatures.Any()
+            //            ? notLethalCreatures
+            //                .OrderBy(c => c.Attack + c.Defense).First()
+            //            : allAtackingCreatures.OrderBy(c => c.Attack + c.Defense).FirstOrDefault();
+            //    }
 
-                if (breakWardCreature == null) return new List<Card>();
+            //    if (breakWardCreature == null) return new List<Card>();
 
-                var newUsedCards = new List<Card>() {breakWardCreature};
-                var noWardAttackingCreatures =
-                    GetCurrentTargetAttackingCreatures(targetCreature,
-                        allAtackingCreatures,
-                        newUsedCards,
-                        hpLeft,
-                        false,
-                        isNecessaryToKill,
-                        constAllAtackingCreatures);
+            //    var newUsedCards = new List<Card>() {breakWardCreature};
+            //    var noWardAttackingCreatures =
+            //        GetTargetCreatureTradeResult(targetCreature,
+            //            allAtackingCreatures,
+            //            newUsedCards,
+            //            hpLeft,
+            //            false,
+            //            isNecessaryToKill,
+            //            constAllAtackingCreatures);
 
-                if (noWardAttackingCreatures.Any())
-                {
-                    var resCards = new List<Card>() {breakWardCreature};
-                    resCards.AddRange(noWardAttackingCreatures);
-                    return resCards;
-                }
-                return new List<Card>();
-            }
+            //    if (noWardAttackingCreatures.Any())
+            //    {
+            //        var resCards = new List<Card>() {breakWardCreature};
+            //        resCards.AddRange(noWardAttackingCreatures);
+            //        return resCards;
+            //    }
+            //    return new List<Card>();
+            //}
 
 
             TradeResult bestTradeResult = null;
-            if (hpLeft <= 0) return new List<Card>();
+            //if (hpLeft <= 0) return new List<Card>();
 
             foreach (var attackingCard in allAtackingCreatures)
             {
                 if (usedCards.Contains(attackingCard)) continue;
 
                 var newUsedCards = new List<Card>(usedCards) {attackingCard};
-                var currMinKillDamageCards =
-                    GetCurrentTargetAttackingCreatures(
+                var isKilling = IsKilling(newUsedCards, targetCreature);
+
+                TradeResult tradeResult;
+
+                if (isKilling)
+                {
+                    tradeResult = GetTradeResult(newUsedCards, targetCreature);
+                }
+                else
+                {
+                    tradeResult = GetTargetCreatureTradeResult(
                         targetCreature,
                         allAtackingCreatures,
                         newUsedCards,
                         hpLeft - attackingCard.Attack,
-                        false,
-                        true,
+                        hasWard,
+                        isNecessaryToKill,
                         constAllAtackingCreatures);
-                var currDamage = attackingCard.Attack + currMinKillDamageCards.Sum(c => c.Attack);
-                if (currDamage >= hpLeft)//хватит урона, чтобы убить
-                {
-                    var tmpMinKillDamageCards = new List<Card>(){attackingCard};
-                    tmpMinKillDamageCards.AddRange(currMinKillDamageCards);
-
-                    var tradeResult = GetTradeResult(tmpMinKillDamageCards, targetCreature);
-                    if (isNecessaryToKill || tradeResult.IsGoodTrade) //важно убить сущ-во, либо это выгодный размен
-                    {
-                        if (bestTradeResult == null)
-                        {
-                            bestTradeResult = tradeResult;
-                        }
-                        else
-                        {
-                            if (tradeResult.MyDeadCreaturesNumber < bestTradeResult.MyDeadCreaturesNumber)
-                            {
-                                bestTradeResult = tradeResult;
-                            }
-                            else if (tradeResult.MyDeadCreaturesNumber == bestTradeResult.MyDeadCreaturesNumber)
-                            {
-                                if (tradeResult.MySumDamage < bestTradeResult.MySumDamage)
-                                {
-                                    bestTradeResult = tradeResult;
-                                }
-                            }
-                        }
-                    }
                 }
+
+                var resultComparison = TradeResult.GetResultComparison(tradeResult, bestTradeResult);
+                if (resultComparison < 0) bestTradeResult = tradeResult;
+
+
+                //var currDamage = attackingCard.Attack + currMinKillDamageCards.Sum(c => c.Attack);
+                //if (currDamage >= hpLeft)//хватит урона, чтобы убить
+                //{
+                //    var tmpMinKillDamageCards = new List<Card>(){attackingCard};
+                //    tmpMinKillDamageCards.AddRange(currMinKillDamageCards);
+
+                //    var tradeResult = GetTradeResult(tmpMinKillDamageCards, targetCreature);
+                //    if (isNecessaryToKill || tradeResult.IsGoodTrade) //важно убить сущ-во, либо это выгодный размен
+                //    {
+                //        var resultComparison = TradeResult.GetResultComparison(tradeResult, bestTradeResult);
+                //        if (resultComparison < 0) bestTradeResult = tradeResult;
+                //    }
+                //}
             }
 
-            if (bestTradeResult == null) return new List<Card>();
-            return bestTradeResult.MyCreatures;
+            return bestTradeResult;
         }
+
 
         static bool IsKillingOppHero(int oppHeroHp, IList<Card> attackingCreatures)
         {
             return attackingCreatures.Sum(c => c.Attack) >= oppHeroHp;
         }
 
-        static IList<Tuple<Card, int>> GetAttackTargets(IList<Card> allCreatures, IList<Card> summonningCreatures, int oppHeroHp, int myHeroHp, IDictionary<Card, int> redItemsTargets)
+        static IList<TradeResult> GetAttackTargets(IList<Card> allCreatures, IList<Card> allAttackingCreatures,
+            int oppHeroHp, int myHeroHp, IDictionary<Card, int> redItemsTargets)
         {
-            var attackTargets = new List<Tuple<Card, int>>();
-            var allAttackingCreatures = GetAllAttackingCreatures(allCreatures, summonningCreatures);
+            var attackTargets = new List<TradeResult>();
             var constAllAtackingCreatures = new List<Card>(allAttackingCreatures);
 
-            //foreach (var card in allAttackingCreatures)
-            //    attackTargets.Add(card, -1);
-
             var oppGuards = new List<Card>();
-            foreach (var card in allCreatures.Where(c => c.Location == -1 && !redItemsTargets.Values.Contains(c.InstanceId)))
+            foreach (var card in allCreatures.Where(c =>
+                c.Location == -1 && !redItemsTargets.Values.Contains(c.InstanceId)))
             {
                 if (card.IsGuard) oppGuards.Add(card);
             }
 
-            //if (!oppGuards.Any()) return attackTargets;
-            
             var orderedOppGuards = oppGuards.OrderByDescending(og => og.Defense).ToList();
             var notKillingGuards = new List<Card>();
 
             foreach (var guard in orderedOppGuards)
             {
-                var guardAttackingCreatures = GetCurrentTargetAttackingCreatures(guard,
+                var guardAttackingCreatures = GetTargetCreatureTradeResult(guard,
                     allAttackingCreatures,
                     new List<Card>(),
                     guard.Defense,
@@ -627,49 +709,53 @@ namespace LegendsOfCodeAndMagic
                     true,
                     constAllAtackingCreatures);
 
-                if (!guardAttackingCreatures.Any())
+                if (guardAttackingCreatures == null)
                 {
                     notKillingGuards.Add(guard);
                 }
-
-                foreach (var ac in guardAttackingCreatures)
+                else
                 {
-                    attackTargets.Add(new Tuple<Card, int>(ac, guard.InstanceId));
-                    allAttackingCreatures.Remove(ac);
+                    attackTargets.Add(guardAttackingCreatures);
+                    foreach (var ac in guardAttackingCreatures.MyCreatures)
+                    {
+                        allAttackingCreatures.Remove(ac);
+                    }
                 }
             }
 
             var notKillingGuard = notKillingGuards.FirstOrDefault();
             if (notKillingGuard != null && allAttackingCreatures.Any())
             {
-                //foreach (var card in allAttackingCreatures)
-                //{
-                //    attackTargets.Add(new Tuple<Card, int>(card, notKillingGuard.InstanceId));
-                //}
-
                 return attackTargets;
             }
-            
+
             if (IsKillingOppHero(oppHeroHp, allAttackingCreatures))
             {
-                foreach (var card in allAttackingCreatures)
+                var killHeroTradeResult = new TradeResult() {IsGoodTrade = true, MyDeadCreaturesNumber = 0};
+                foreach (var creature in allAttackingCreatures)
                 {
-                    attackTargets.Add(new Tuple<Card, int>(card, -1));
+                    killHeroTradeResult.MyCreatures.Add(creature);
                 }
+                attackTargets.Add(killHeroTradeResult);
+
                 return attackTargets;
             }
 
             //идем в размен
-            var orderedOppCreatures = allCreatures
-                .Where(c => c.Location == -1 && !c.IsGuard && !redItemsTargets.Values.Contains(c.InstanceId))
-                .OrderByDescending(c => c.Attack + c.Defense).ToList();
+            var leftCreatures = allCreatures
+                .Where(c => c.Location == -1 && !c.IsGuard && !redItemsTargets.Values.Contains(c.InstanceId)).ToList();
 
-            var isNecessaryToKill = IsKillingOppHero(myHeroHp, allCreatures.Where(c => c.Location == -1 && !c.IsGuard).ToList());
+            var orderedOppCreatures = leftCreatures.Where(c => c.IsLethal).OrderByDescending(c => c.Defense + c.Attack)
+                .ToList();//сначала убиваем летальщиков
+            orderedOppCreatures.AddRange(leftCreatures.Where(c => !c.IsLethal).OrderByDescending(c => c.Defense + c.Attack));
+
+            var isNecessaryToKill =
+                IsKillingOppHero(myHeroHp, allCreatures.Where(c => c.Location == -1 && !c.IsGuard).ToList());
             Console.Error.WriteLine($"I CAN BE KILLED: {isNecessaryToKill}");
 
             foreach (var creature in orderedOppCreatures)
             {
-                var currAttackingCreatures = GetCurrentTargetAttackingCreatures(creature, 
+                var currAttackingCreatures = GetTargetCreatureTradeResult(creature,
                     allAttackingCreatures,
                     new List<Card>(),
                     creature.Defense,
@@ -677,18 +763,23 @@ namespace LegendsOfCodeAndMagic
                     isNecessaryToKill,
                     constAllAtackingCreatures);
 
-                foreach (var ac in currAttackingCreatures)
+                if (currAttackingCreatures == null) continue;
+                if (!currAttackingCreatures.IsGoodTrade && !isNecessaryToKill) continue;
+
+                attackTargets.Add(currAttackingCreatures);
+
+                foreach (var ac in currAttackingCreatures.MyCreatures)
                 {
-                    attackTargets.Add(new Tuple<Card, int>(ac, creature.InstanceId));
                     allAttackingCreatures.Remove(ac);
                 }
             }
 
-            foreach (var card in allAttackingCreatures)
+            var attackHeroTradeResult = new TradeResult() {IsGoodTrade = false, MyDeadCreaturesNumber = 0};
+            foreach (var creature in allAttackingCreatures)
             {
-                attackTargets.Add(new Tuple<Card, int>(card, -1));
+                attackHeroTradeResult.MyCreatures.Add(creature);
             }
-
+            attackTargets.Add(attackHeroTradeResult);
 
             return attackTargets;
         }
@@ -697,69 +788,69 @@ namespace LegendsOfCodeAndMagic
 
         #region USING_ITEMS
 
-        static Card GetGreenItemCreature(IList<Card> allCreatures, IList<Card> summonningCreatures)
+        static Card UpdateCreatureWithItem(Card creature, Card item)
         {
+            creature.Attack += item.Attack;
+            creature.Defense += item.Defense;
+
+            var strBulider = new StringBuilder(creature.Abilities);
+            for (int i = 0; i < strBulider.Length; ++i)
+            {
+                if (strBulider[i] == '-') strBulider[i] = item.Abilities[i];
+            }
+
+            creature.Abilities = strBulider.ToString();
+            return creature;
+        }
+
+        static Card GetGreenItemCreature(Card greenItem, IList<Card> allCreatures, IList<Card> summonningCreatures,
+            int oppHeroHp, int myHeroHp, IDictionary<Card, int> redItemsTargets)
+        {
+            var allAtackingCreatures = GetAllAttackingCreatures(allCreatures, summonningCreatures);
+
+            IList<TradeResult> bestTradeResults = null;
+            int cardIndex = -1;
+            for (int i = 0; i < allAtackingCreatures.Count; ++i)
+            {
+                var creature = allAtackingCreatures[i];
+                var newCreature = UpdateCreatureWithItem(new Card(creature), greenItem);
+                allAtackingCreatures[i] = newCreature;
+
+                var attackTargets = GetAttackTargets(allCreatures, new List<Card>(allAtackingCreatures),oppHeroHp, myHeroHp, redItemsTargets);
+                if (bestTradeResults == null || CompareTradeResultLists(attackTargets, bestTradeResults) < 0)
+                {
+                    bestTradeResults = attackTargets;
+                    cardIndex = i;
+                }
+
+                allAtackingCreatures[i] = creature;
+            }
+
+            if (cardIndex != -1) return allAtackingCreatures[cardIndex];
+
             Card weakestCreature = null;
-            foreach (var c in allCreatures.Where(c => c.Location == 1))
+            foreach (var sc in summonningCreatures)
             {
-                if (weakestCreature == null)
-                {
-                    weakestCreature = c;
-                }
-                else
-                {
-                    if (c.Attack + c.Defense < weakestCreature.Attack + weakestCreature.Defense)
-                    {
-                        weakestCreature = c;
-                    }
-                }
+                if (weakestCreature == null ||
+                    sc.Attack + sc.Defense < weakestCreature.Attack + weakestCreature.Defense)
+                    weakestCreature = sc;
             }
-
-            if (weakestCreature != null) return weakestCreature;
-
-            foreach (var c in summonningCreatures.Where(c => c.IsCharge))
-            {
-                if (weakestCreature == null)
-                {
-                    weakestCreature = c;
-                }
-                else
-                {
-                    if (c.Attack + c.Defense < weakestCreature.Attack + weakestCreature.Defense)
-                    {
-                        weakestCreature = c;
-                    }
-                }
-            }
-            if (weakestCreature != null) return weakestCreature;
-
-            foreach (var c in summonningCreatures)
-            {
-                if (weakestCreature == null)
-                {
-                    weakestCreature = c;
-                }
-                else
-                {
-                    if (c.Attack + c.Defense < weakestCreature.Attack + weakestCreature.Defense)
-                    {
-                        weakestCreature = c;
-                    }
-                }
-            }
-
             return weakestCreature;
         }
 
-        static IDictionary<Card, int> UseGreenItems(IList<Card> items, int manaLeft, IList<Card> allCreatures, IList<Card> summonningCreatures)
+        static IDictionary<Card, int> UseGreenItems(IList<Card> items, int manaLeft, IList<Card> allCreatures, IList<Card> summonningCreatures,
+            int oppHeroHp, int myHeroHp, IDictionary<Card, int> redItemsTargets)
         {
             var itemTargets = new Dictionary<Card, int>();
             var maxItems = GetMaxCards(items, new List<Card>(), manaLeft, int.MaxValue);
 
             foreach (var item in maxItems)
             {
-                var giCreature = GetGreenItemCreature(allCreatures, summonningCreatures);
-                if (giCreature != null) itemTargets.Add(item, giCreature.InstanceId);
+                Card giCreature = GetGreenItemCreature(item, allCreatures, summonningCreatures,oppHeroHp, myHeroHp, redItemsTargets);
+                if (giCreature != null)
+                {
+                    itemTargets.Add(item, giCreature.InstanceId);
+                }
             }
 
             return itemTargets;
