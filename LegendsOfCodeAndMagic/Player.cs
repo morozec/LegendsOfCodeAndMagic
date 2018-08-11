@@ -137,7 +137,7 @@ namespace LegendsOfCodeAndMagic
 
         static IList<int> GetBadCardIds()
         {
-            return new List<int>(){57, 4};
+            return new List<int>(){57, 4, 100};
         }
 
         static IList<int> GetGoodCardIds()
@@ -180,10 +180,11 @@ namespace LegendsOfCodeAndMagic
             }
 
 
-            weight += card.CardDraw;
+            weight += card.CardDraw * 2;
             if (card.IsCreature) weight += 0.1;
 
             weight -= card.Cost;
+            Console.Error.WriteLine(weight);
             return weight;
         }
 
@@ -350,8 +351,10 @@ namespace LegendsOfCodeAndMagic
 
                 var allCreatures = allCards.Where(t => t.IsCreature).ToList();
                 var allAtackingCreatures = GetAllAttackingCreatures(allCreatures, summonningCreatures);
+                var allTableCreatures = GetAllTableCreatures(allCreatures, summonningCreatures);
                 var attackTargets = GetAttackTargets(allCreatures,
                     allAtackingCreatures,
+                    allTableCreatures,
                     oppPlayerData.PlayerHealth,
                     myPlayerData.PlayerHealth,
                     redItemsTargets);
@@ -403,7 +406,7 @@ namespace LegendsOfCodeAndMagic
                 if (goodCardIds.Contains(card.CardNumber)) return i;
 
                 var cardWeight = GetCardWeight(card);
-                if (cardWeight > maxWeight)
+                if (cardWeight - maxWeight > TOLERANCE)
                 {
                     resCardIndex = i;
                     maxWeight = cardWeight;
@@ -507,6 +510,21 @@ namespace LegendsOfCodeAndMagic
 
             return attackingCards;
         }
+        
+        static IList<Card> GetAllTableCreatures(IList<Card> allCreatures, IList<Card> summonningCards)
+        {
+            var tableCreatures = new List<Card>();
+            foreach (var card in allCreatures.Where(c => c.Location == 1))
+            {
+                tableCreatures.Add(card);
+            }
+            foreach (var card in summonningCards)
+            {
+                tableCreatures.Add(card);
+            }
+
+            return tableCreatures;
+        }
 
         static bool IsGoodTrade(Card myCreature, Card oppCreature, bool hasBetterTableCreatures, bool hasWard)
         {
@@ -522,11 +540,26 @@ namespace LegendsOfCodeAndMagic
             return false;
             //return oppCreature.Attack > myCreature.Attack || oppCreature.Attack == myCreature.Attack && oppCreature.Defense > myCreature.Defense;
         }
+        
+        static bool HasBetterTableCreature(IList<Card> comparingCreatures, IList<Card> allMyTableCreatures)
+        {
+            var comparingSum = comparingCreatures.Where(c => !c.IsWard).Sum(c => c.Attack + c.Defense);
+            var hasBetter = allMyTableCreatures.Any(c => !comparingCreatures.Any(cc => cc.InstanceId == c.InstanceId) && c.Attack + c.Defense > comparingSum);
+            return hasBetter;
+        }
 
-        static TradeResult GetTradeResult(IList<Card> myCreatures, Card oppCreature)
+        static TradeResult GetTradeResult(IList<Card> myCreatures, Card oppCreature, IList<Card> allMyTableCreatures)
         {
             var myDeadCreatures = myCreatures.Where(c => IsKilling(oppCreature, c)).ToList();
-            var isGoodTrade =  oppCreature.Attack + oppCreature.Defense >= myDeadCreatures.Sum(c => c.Attack + c.Defense);
+            
+            bool isGoodTrade = false;
+            if (oppCreature.IsLethal)
+            {
+                var hasBetterTableCreatures = HasBetterTableCreature(myCreatures, allMyTableCreatures);
+                if (hasBetterTableCreatures) isGoodTrade = true;
+            }            
+            else 
+                isGoodTrade =  oppCreature.Attack + oppCreature.Defense >= myDeadCreatures.Sum(c => c.Attack + c.Defense);
 
             return new TradeResult()
             {
@@ -534,6 +567,21 @@ namespace LegendsOfCodeAndMagic
                 MyCreatures = myCreatures,
                 OppCreature = oppCreature,
                 MyDeadCreaturesNumber = myDeadCreatures.Count
+            };
+        }
+        
+        static TradeResult GetRemoveWardTradeResult(Card myCreature, Card oppCreature)
+        {
+            bool isGoodTrade;
+            int myDeadCreaturesNumber;
+            
+            var isKilling = IsKilling(oppCreature, myCreature);
+            return new TradeResult
+            {
+                IsGoodTrade = !isKilling,
+                MyCreatures = new List<Card>(){myCreature},
+                OppCreature = oppCreature,
+                MyDeadCreaturesNumber = isKilling ? 1 : 0
             };
         }
 
@@ -559,15 +607,10 @@ namespace LegendsOfCodeAndMagic
         
 
         static TradeResult GetTargetCreatureTradeResult(Card targetCreature, IList<Card> allAtackingCreatures, IList<Card> usedCards,
-            int hpLeft, bool hasWard, bool isNecessaryToKill, IList<Card> constAllAtackingCreatures)
+            int hpLeft, bool hasWard, bool isNecessaryToKill, IList<Card> allMyTableCreatures)
         {
             if (!hasWard)
             {
-                //ищем юнита, который убьет одним ударом
-                //var killCreature = allAtackingCreatures.Where(c => !c.IsLethal).OrderBy(c => c.Attack + c.Defense)
-                //    .FirstOrDefault(c => c.Attack >= hpLeft);
-                //if (killCreature != null) return new List<Card>(){killCreature};
-
                 if (isNecessaryToKill)
                 {
                     //ищем юнита с ядом
@@ -582,53 +625,10 @@ namespace LegendsOfCodeAndMagic
                             MyDeadCreaturesNumber = IsKilling(targetCreature, lethalCreature) ? 1 : 0
                         };
                 }
-            }
-            //else //ищем самого слабого юнита, чтобы снять щит
-            //{
-            //    //if (!isNecessaryToKill) return new List<Card>();//не занимаемся снятие щита с юнита, который нам не критичен
-
-            //    var notLethalCreatures = allAtackingCreatures.Where(c => !c.IsLethal).ToList();
-
-            //    Card breakWardCreature = null;
-            //    if (notLethalCreatures.Any())
-            //    {
-            //        //сначала берем своих со щитами
-            //        breakWardCreature = notLethalCreatures.Where(c => c.IsWard).OrderBy(c => c.Attack + c.Defense)
-            //            .FirstOrDefault();
-            //    }
-
-            //    if (breakWardCreature == null)
-            //    {
-            //        breakWardCreature = notLethalCreatures.Any()
-            //            ? notLethalCreatures
-            //                .OrderBy(c => c.Attack + c.Defense).First()
-            //            : allAtackingCreatures.OrderBy(c => c.Attack + c.Defense).FirstOrDefault();
-            //    }
-
-            //    if (breakWardCreature == null) return new List<Card>();
-
-            //    var newUsedCards = new List<Card>() {breakWardCreature};
-            //    var noWardAttackingCreatures =
-            //        GetTargetCreatureTradeResult(targetCreature,
-            //            allAtackingCreatures,
-            //            newUsedCards,
-            //            hpLeft,
-            //            false,
-            //            isNecessaryToKill,
-            //            constAllAtackingCreatures);
-
-            //    if (noWardAttackingCreatures.Any())
-            //    {
-            //        var resCards = new List<Card>() {breakWardCreature};
-            //        resCards.AddRange(noWardAttackingCreatures);
-            //        return resCards;
-            //    }
-            //    return new List<Card>();
-            //}
+            }           
 
 
-            TradeResult bestTradeResult = null;
-            //if (hpLeft <= 0) return new List<Card>();
+            TradeResult bestTradeResult = null;           
 
             foreach (var attackingCard in allAtackingCreatures)
             {
@@ -641,7 +641,7 @@ namespace LegendsOfCodeAndMagic
 
                 if (isKilling)
                 {
-                    tradeResult = GetTradeResult(newUsedCards, targetCreature);
+                    tradeResult = GetTradeResult(newUsedCards, targetCreature, allMyTableCreatures);
                 }
                 else
                 {
@@ -652,26 +652,17 @@ namespace LegendsOfCodeAndMagic
                         hpLeft - attackingCard.Attack,
                         hasWard,
                         isNecessaryToKill,
-                        constAllAtackingCreatures);
+                        allMyTableCreatures);
                 }
 
                 var resultComparison = TradeResult.GetResultComparison(tradeResult, bestTradeResult);
                 if (resultComparison < 0) bestTradeResult = tradeResult;
-
-
-                //var currDamage = attackingCard.Attack + currMinKillDamageCards.Sum(c => c.Attack);
-                //if (currDamage >= hpLeft)//хватит урона, чтобы убить
-                //{
-                //    var tmpMinKillDamageCards = new List<Card>(){attackingCard};
-                //    tmpMinKillDamageCards.AddRange(currMinKillDamageCards);
-
-                //    var tradeResult = GetTradeResult(tmpMinKillDamageCards, targetCreature);
-                //    if (isNecessaryToKill || tradeResult.IsGoodTrade) //важно убить сущ-во, либо это выгодный размен
-                //    {
-                //        var resultComparison = TradeResult.GetResultComparison(tradeResult, bestTradeResult);
-                //        if (resultComparison < 0) bestTradeResult = tradeResult;
-                //    }
-                //}
+              
+            }
+            
+            if (bestTradeResult == null && targetCreature.IsWard && usedCards.Any())
+            {
+                bestTradeResult = GetRemoveWardTradeResult(usedCards[0], targetCreature);   
             }
 
             return bestTradeResult;
@@ -683,7 +674,7 @@ namespace LegendsOfCodeAndMagic
             return attackingCreatures.Sum(c => c.Attack) >= oppHeroHp;
         }
 
-        static IList<TradeResult> GetAttackTargets(IList<Card> allCreatures, IList<Card> allAttackingCreatures,
+        static IList<TradeResult> GetAttackTargets(IList<Card> allCreatures, IList<Card> allAttackingCreatures,IList<Card> allMyTableCreatures,
             int oppHeroHp, int myHeroHp, IDictionary<Card, int> redItemsTargets)
         {
             var attackTargets = new List<TradeResult>();
@@ -707,7 +698,7 @@ namespace LegendsOfCodeAndMagic
                     guard.Defense,
                     guard.IsWard,
                     true,
-                    constAllAtackingCreatures);
+                    allMyTableCreatures);
 
                 if (guardAttackingCreatures == null)
                 {
@@ -761,7 +752,7 @@ namespace LegendsOfCodeAndMagic
                     creature.Defense,
                     creature.IsWard,
                     isNecessaryToKill,
-                    constAllAtackingCreatures);
+                    allMyTableCreatures);
 
                 if (currAttackingCreatures == null) continue;
                 if (!currAttackingCreatures.IsGoodTrade && !isNecessaryToKill) continue;
@@ -807,6 +798,7 @@ namespace LegendsOfCodeAndMagic
             int oppHeroHp, int myHeroHp, IDictionary<Card, int> redItemsTargets)
         {
             var allAtackingCreatures = GetAllAttackingCreatures(allCreatures, summonningCreatures);
+            var allTableCreatures = GetAllTableCreatures(allCreatures, summonningCreatures);
 
             IList<TradeResult> bestTradeResults = null;
             int cardIndex = -1;
@@ -816,7 +808,7 @@ namespace LegendsOfCodeAndMagic
                 var newCreature = UpdateCreatureWithItem(new Card(creature), greenItem);
                 allAtackingCreatures[i] = newCreature;
 
-                var attackTargets = GetAttackTargets(allCreatures, new List<Card>(allAtackingCreatures),oppHeroHp, myHeroHp, redItemsTargets);
+                var attackTargets = GetAttackTargets(allCreatures, new List<Card>(allAtackingCreatures), allTableCreatures, oppHeroHp, myHeroHp, redItemsTargets);
                 if (bestTradeResults == null || CompareTradeResultLists(attackTargets, bestTradeResults) < 0)
                 {
                     bestTradeResults = attackTargets;
