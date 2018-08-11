@@ -27,7 +27,17 @@ namespace LegendsOfCodeAndMagic
         public bool IsGoodTrade { get; set; }
         public int MySumDamage
         {
-            get { return MyCreatures.Sum(c => c.Attack); }
+            get
+            {
+                var damage = 0;
+                for (int i = 0; i < MyCreatures.Count; ++i)
+                {
+                    if (OppCreature.IsWard && i == 0) continue;
+                    damage += MyCreatures[i].Attack;
+                }
+
+                return damage;
+            }
         }
 
 
@@ -45,12 +55,25 @@ namespace LegendsOfCodeAndMagic
 
             if (result1.IsGoodTrade && !result2.IsGoodTrade) return -1;
             if (!result1.IsGoodTrade && result2.IsGoodTrade) return 1;
+            
+            var isKilling1 = Player.IsKilling(result1.MyCreatures, result1.OppCreature);
+            var isKilling2 = Player.IsKilling(result2.MyCreatures, result2.OppCreature);
+            if (isKilling1 && !isKilling2) return -1;
+            if (isKilling2 && !isKilling1) return 1;
 
             var deadCreaturesDiff = result1.MyDeadCreaturesNumber - result2.MyDeadCreaturesNumber;
             if (deadCreaturesDiff != 0) return deadCreaturesDiff;//если убили больше моих в 1 случае, 2 варинат лучше
 
             var sumDamageDiff = result1.MySumDamage - result2.MySumDamage;
-            return sumDamageDiff; //если нанесли больше урона в первом случае, 2 варант лучше (в 1 наносим лишний урон)
+            
+            if (isKilling1) //isKilling2 тоже true
+            {               
+                return sumDamageDiff; //если нанесли больше урона в первом случае, 2 варант лучше (в 1 наносим лишний урон)
+            }
+            else
+            {
+                return -sumDamageDiff;//надо нанести больше урона
+            }
         }
     }
 
@@ -153,7 +176,7 @@ namespace LegendsOfCodeAndMagic
         static double GetCardWeight(Card card)
         {
             if (card.IsCreature && card.Attack == 0) return -double.MaxValue;
-            if (card.IsGreenItem && card.Attack == 0) return -double.MaxValue;
+            //if (card.IsGreenItem && card.Attack == 0) return -double.MaxValue;
             if (card.IsRedItem && card.Defense >= 0) return -double.MaxValue;
 
 
@@ -181,7 +204,8 @@ namespace LegendsOfCodeAndMagic
 
 
             weight += card.CardDraw * 2;
-            if (card.IsCreature) weight += 0.1;
+            if (card.IsLethal) weight += 2;
+            //if (card.IsCreature) weight += 0.1;
 
             weight -= card.Cost;
             Console.Error.WriteLine(weight);
@@ -398,27 +422,40 @@ namespace LegendsOfCodeAndMagic
             var goodCardIds = GetGoodCardIds();
 
             var maxWeight = -double.MaxValue;
+            var resManaCurveLack = -int.MaxValue;
             int resCardIndex = -1;
+            
+            
             for (int i = 0; i < cards.Count; ++i)
             {
                 var card = cards[i];
                 if (badCardIds.Contains(card.CardNumber)) continue;
                 if (goodCardIds.Contains(card.CardNumber)) return i;
+                
+                var cost = card.Cost;
+                if (cost == 0) cost = 1;
+                else if (cost > 7) cost = 7;
+                    
+                var manaCurveLack = manaCurve[cost] - handManaCurve[cost];
 
                 var cardWeight = GetCardWeight(card);
                 if (cardWeight - maxWeight > TOLERANCE)
                 {
                     resCardIndex = i;
                     maxWeight = cardWeight;
+                    resManaCurveLack = manaCurveLack;
                 }
 
                 else if (resCardIndex >= 0 && Math.Abs(cardWeight - maxWeight) < TOLERANCE)
-                {
-                    if (card.Attack > cards[resCardIndex].Attack)
-                    {
+                {                    
+                    
+                    if (manaCurveLack > resManaCurveLack){
                         resCardIndex = i;
                         maxWeight = cardWeight;
+                        resManaCurveLack = manaCurveLack;
                     }
+                    
+                    
                 }
 
                 //var isOkCard = (card.IsCreature || card.IsGreenItem) && card.Attack > 0 || card.IsRedItem && card.Defense < 0;
@@ -553,13 +590,13 @@ namespace LegendsOfCodeAndMagic
             var myDeadCreatures = myCreatures.Where(c => IsKilling(oppCreature, c)).ToList();
             
             bool isGoodTrade = false;
-            if (oppCreature.IsLethal)
+            if (oppCreature.IsLethal && oppCreature.Attack > 0)
             {
                 var hasBetterTableCreatures = HasBetterTableCreature(myCreatures, allMyTableCreatures);
                 if (hasBetterTableCreatures) isGoodTrade = true;
             }            
             else 
-                isGoodTrade =  oppCreature.Attack + oppCreature.Defense >= myDeadCreatures.Sum(c => c.Attack + c.Defense);
+                isGoodTrade = oppCreature.Attack + oppCreature.Defense >= myDeadCreatures.Sum(c => c.Attack + c.Defense);
 
             return new TradeResult()
             {
@@ -592,7 +629,7 @@ namespace LegendsOfCodeAndMagic
             return attackingCreature.Attack >= defendingCreature.Defense;
         }
 
-        static bool IsKilling(IList<Card> attackingCreatures, Card defendingCreature)
+        public static bool IsKilling(IList<Card> attackingCreatures, Card defendingCreature)
         {
             var hpLeft = defendingCreature.Defense;
             for (int i = 0; i < attackingCreatures.Count; ++i)
@@ -662,7 +699,13 @@ namespace LegendsOfCodeAndMagic
             
             if (bestTradeResult == null && targetCreature.IsWard && usedCards.Any())
             {
-                bestTradeResult = GetRemoveWardTradeResult(usedCards[0], targetCreature);   
+                if (targetCreature.Attack > 0)
+                    bestTradeResult = GetRemoveWardTradeResult(usedCards[0], targetCreature);
+                else
+                {
+                    bestTradeResult = GetTradeResult(usedCards, targetCreature, allMyTableCreatures);
+                }
+
             }
 
             return bestTradeResult;
