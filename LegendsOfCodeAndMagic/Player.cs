@@ -25,19 +25,17 @@ namespace LegendsOfCodeAndMagic
 
         public int MyDeadCreaturesNumber { get; set; }
         public bool IsGoodTrade { get; set; }
-        public int MySumDamage
-        {
-            get
-            {
-                var damage = 0;
-                for (int i = 0; i < MyCreatures.Count; ++i)
-                {
-                    if (OppCreature.IsWard && i == 0) continue;
-                    damage += MyCreatures[i].Attack;
-                }
 
-                return damage;
+        public int GetMySumDamage(bool consiedWard)
+        {
+            var damage = 0;
+            for (int i = 0; i < MyCreatures.Count; ++i)
+            {
+                if (consiedWard && OppCreature.IsWard && i == 0) continue;
+                damage += MyCreatures[i].Attack;
             }
+
+            return damage;
         }
 
 
@@ -64,15 +62,13 @@ namespace LegendsOfCodeAndMagic
             var deadCreaturesDiff = result1.MyDeadCreaturesNumber - result2.MyDeadCreaturesNumber;
             if (deadCreaturesDiff != 0) return deadCreaturesDiff;//если убили больше моих в 1 случае, 2 варинат лучше
 
-            var sumDamageDiff = result1.MySumDamage - result2.MySumDamage;
-            
             if (isKilling1) //isKilling2 тоже true
             {               
-                return sumDamageDiff; //если нанесли больше урона в первом случае, 2 варант лучше (в 1 наносим лишний урон)
+                return result1.GetMySumDamage(false) - result2.GetMySumDamage(false); //если нанесли больше урона в первом случае, 2 варант лучше (в 1 наносим лишний урон)
             }
             else
             {
-                return -sumDamageDiff;//надо нанести больше урона
+                return -(result1.GetMySumDamage(true) - result2.GetMySumDamage(true));//надо нанести больше урона
             }
         }
     }
