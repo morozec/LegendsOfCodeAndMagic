@@ -780,16 +780,17 @@ namespace LegendsOfCodeAndMagic
         }
 
 
-        static bool IsKillingOppHero(int oppHeroHp, IList<Card> attackingCreatures)
+        static bool IsKillingOppHero(int oppHeroHp, IList<Card> attackingCreatures, bool isOppHero)
         {
-            return attackingCreatures.Sum(c => c.Attack) >= oppHeroHp;
+            var damage = attackingCreatures.Sum(c => c.Attack);
+            if (isOppHero) damage += attackingCreatures.Where(c => c.Location == 0).Sum(c => -c.OpponentHealthChange);
+            return damage >= oppHeroHp;
         }
 
         static IList<TradeResult> GetAttackTargets(IList<Card> oppCreatures, IList<Card> allAttackingCreatures,IList<Card> allMyTableCreatures,
             int oppHeroHp, int myHeroHp, IDictionary<Card, int> redItemsTargets)
         {
             var attackTargets = new List<TradeResult>();
-            var constAllAtackingCreatures = new List<Card>(allAttackingCreatures);
 
             var oppGuards = new List<Card>();
             foreach (var card in oppCreatures.Where(c =>
@@ -831,7 +832,7 @@ namespace LegendsOfCodeAndMagic
                 return attackTargets;
             }
 
-            if (IsKillingOppHero(oppHeroHp, allAttackingCreatures))
+            if (IsKillingOppHero(oppHeroHp, allAttackingCreatures, true))
             {
                 var killHeroTradeResult = new TradeResult() {IsGoodTrade = true, MyDeadCreaturesNumber = 0};
                 foreach (var creature in allAttackingCreatures)
@@ -852,7 +853,7 @@ namespace LegendsOfCodeAndMagic
             orderedOppCreatures.AddRange(leftCreatures.Where(c => !c.IsLethal).OrderByDescending(c => c.Defense + c.Attack));
 
             var isNecessaryToKill =
-                IsKillingOppHero(myHeroHp, oppCreatures.Where(c => !c.IsGuard).ToList());
+                IsKillingOppHero(myHeroHp, oppCreatures.Where(c => !c.IsGuard).ToList(), false);
 
             foreach (var creature in orderedOppCreatures)
             {
