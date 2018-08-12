@@ -156,7 +156,7 @@ namespace LegendsOfCodeAndMagic
 
         static IList<int> GetBadCardIds()
         {
-            return new List<int>(){57, 4, 100};
+            return new List<int>(){57, 4, 100, 140};
         }
 
         static IList<int> GetGoodCardIds()
@@ -782,6 +782,7 @@ namespace LegendsOfCodeAndMagic
 
         static bool IsKillingOppHero(int oppHeroHp, IList<Card> attackingCreatures, bool isOppHero)
         {
+            //TODO: BreakThroug
             var damage = attackingCreatures.Sum(c => c.Attack);
             if (isOppHero) damage += attackingCreatures.Where(c => c.Location == 0).Sum(c => -c.OpponentHealthChange);
             return damage >= oppHeroHp;
