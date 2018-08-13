@@ -939,8 +939,6 @@ namespace LegendsOfCodeAndMagic
 
         static Card UpdateCreatureWithItem(Card creature, Card item)
         {
-            creature.Attack += item.Attack;
-            creature.Defense += item.Defense;
 
             var strBulider = new StringBuilder(creature.Abilities);
             for (int i = 0; i < strBulider.Length; ++i)
@@ -954,8 +952,16 @@ namespace LegendsOfCodeAndMagic
                     if (item.Abilities[i] != '-') strBulider[i] = '-';
                 }
             }
-
             creature.Abilities = strBulider.ToString();
+
+            creature.Attack += item.Attack;
+            if (!creature.IsWard) creature.Defense += item.Defense;
+            else if (item.Defense < 0)
+            {
+                strBulider = new StringBuilder(creature.Abilities) {[5] = '-'};
+                creature.Abilities = strBulider.ToString();
+            }
+
             return creature;
         }
 
