@@ -156,7 +156,7 @@ namespace LegendsOfCodeAndMagic
 
         static IList<int> GetBadCardIds()
         {
-            return new List<int>(){57, 4, 100, 140};
+            return new List<int>(){57, 4, 100, 140, 138};
         }
 
         static IList<int> GetGoodCardIds()
@@ -173,35 +173,43 @@ namespace LegendsOfCodeAndMagic
         {
             if (card.IsCreature && card.Attack == 0) return -double.MaxValue;
             //if (card.IsGreenItem && card.Attack == 0) return -double.MaxValue;
-            if (card.IsRedItem && card.Defense >= 0) return -double.MaxValue;
+            //if (card.IsRedItem && card.Defense >= 0) return -double.MaxValue;
 
 
             var weight = 0d;
 
-            if (card.IsLethal)
+            if (!card.IsRedItem)
             {
-                weight += card.Defense;
-                if (card.IsWard) weight += card.Defense;
-                weight += 1;
-            }
-            else
-            {
-                weight += card.Attack;
-                weight += card.Defense;
-
-                if (card.IsWard)
+                if (card.IsLethal)
+                {
+                    weight += card.Defense;
+                    if (card.IsWard) weight += card.Defense;
+                    weight += 2;
+                }
+                else
                 {
                     weight += card.Attack;
                     weight += card.Defense;
-                }
 
+                    if (card.IsWard)
+                    {
+                        weight += card.Attack;
+                        weight += card.Defense;
+                    }
+
+                    weight /= 2;
+                }
+            }
+            else
+            {
+                weight += Math.Abs(card.Attack);
+                weight += Math.Abs(card.Defense);
                 weight /= 2;
+
+                if (card.Abilities == "BCDGLW") weight += 1;
             }
 
-
             weight += card.CardDraw * 2;
-            if (card.IsLethal) weight += 2;
-            //if (card.IsCreature) weight += 0.1;
 
             weight -= card.Cost;
             Console.Error.WriteLine(weight);
@@ -435,8 +443,11 @@ namespace LegendsOfCodeAndMagic
 
         static int CompareTradeResultLists(IList<TradeResult> tradeResults1, IList<TradeResult> tradeResults2)
         {
-            if (tradeResults1.Any(x => x.IsGoodTrade && x.OppCreature == null)) return -1;//убьем героя врага
-            if (tradeResults2.Any(x => x.IsGoodTrade && x.OppCreature == null)) return 1;//убьем героя врага
+            var isHeroKill1 = tradeResults1.Any(x => x.IsGoodTrade && x.OppCreature == null);
+            var isHeroKill2 = tradeResults2.Any(x => x.IsGoodTrade && x.OppCreature == null);
+
+            if (isHeroKill1 && !isHeroKill2) return -1;//убьем героя врага
+            if (!isHeroKill1 && isHeroKill2) return 1;//убьем героя врага
 
             var goodResultsDiff = tradeResults1.Count(x => x.IsGoodTrade) - tradeResults2.Count(x => x.IsGoodTrade);
             if (goodResultsDiff != 0) return -goodResultsDiff;
@@ -915,7 +926,14 @@ namespace LegendsOfCodeAndMagic
             var strBulider = new StringBuilder(creature.Abilities);
             for (int i = 0; i < strBulider.Length; ++i)
             {
-                if (strBulider[i] == '-') strBulider[i] = item.Abilities[i];
+                if (item.IsGreenItem)
+                {
+                    if (strBulider[i] == '-') strBulider[i] = item.Abilities[i];
+                }
+                else//RED ITEM
+                {
+                    if (item.Abilities[i] != '-') strBulider[i] = '-';
+                }
             }
 
             creature.Abilities = strBulider.ToString();
