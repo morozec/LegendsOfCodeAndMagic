@@ -23,7 +23,7 @@ namespace LegendsOfCodeAndMagic
         public IList<Card> MyCreatures { get; set; }
         public Card OppCreature { get; set; }
 
-        public int MyDeadCreaturesNumber { get; set; }
+        public IList<Card> MyDeadCreatures { get; set; }
         public bool IsGoodTrade { get; set; }
 
         public int GetMySumDamage(bool consiedWard)
@@ -59,7 +59,7 @@ namespace LegendsOfCodeAndMagic
             if (isKilling1 && !isKilling2) return -1;
             if (isKilling2 && !isKilling1) return 1;
 
-            var deadCreaturesDiff = result1.MyDeadCreaturesNumber - result2.MyDeadCreaturesNumber;
+            var deadCreaturesDiff = result1.MyDeadCreatures.Count - result2.MyDeadCreatures.Count;
             if (deadCreaturesDiff != 0) return deadCreaturesDiff;//если убили больше моих в 1 случае, 2 варинат лучше
 
             if (isKilling1) //isKilling2 тоже true
@@ -369,7 +369,9 @@ namespace LegendsOfCodeAndMagic
                     resultStr += $"SUMMON {card.InstanceId};";
                 }
 
-                greenItemsTargets = UseGreenItems(allCards.Where(c => c.IsGreenItem).ToList(),
+                greenItemsTargets = UseGreenItems(
+                    allCards.Where(c =>
+                        c.IsGreenItem && !greenItemsTargets.Keys.Contains(c)).ToList(),
                     manaLeft,
                     allCards.Where(c => c.IsCreature).ToList(),
                     summonningCreatures,
@@ -438,7 +440,11 @@ namespace LegendsOfCodeAndMagic
             var goodResultsDiff = tradeResults1.Count(x => x.IsGoodTrade) - tradeResults2.Count(x => x.IsGoodTrade);
             if (goodResultsDiff != 0) return -goodResultsDiff;
 
-            var myDeadCreaturesDiff = tradeResults1.Sum(x => x.MyDeadCreaturesNumber) - tradeResults2.Sum(x => x.MyDeadCreaturesNumber);
+            var myDeadCreaturesValuesDiff = tradeResults1.Sum(x => x.MyDeadCreatures.Sum(c => c.Attack + c.Defense)) - 
+                                            tradeResults2.Sum(x => x.MyDeadCreatures.Sum(c => c.Attack + c.Defense));
+            if (myDeadCreaturesValuesDiff != 0) return myDeadCreaturesValuesDiff;
+
+            var myDeadCreaturesDiff = tradeResults1.Sum(x => x.MyDeadCreatures.Count) - tradeResults2.Sum(x => x.MyDeadCreatures.Count);
             if (myDeadCreaturesDiff != 0) return myDeadCreaturesDiff;
 
             var resultsDiff = tradeResults1.Count - tradeResults2.Count;
@@ -674,7 +680,7 @@ namespace LegendsOfCodeAndMagic
                 IsGoodTrade = isGoodTrade,
                 MyCreatures = myCreatures,
                 OppCreature = oppCreature,
-                MyDeadCreaturesNumber = myDeadCreatures.Count
+                MyDeadCreatures = myDeadCreatures
             };
         }
         
@@ -684,12 +690,14 @@ namespace LegendsOfCodeAndMagic
             int myDeadCreaturesNumber;
             
             var isKilling = IsKilling(oppCreature, myCreature);
+            var myDeadCreatures = new List<Card>();
+            if (isKilling) myDeadCreatures.Add(myCreature);
             return new TradeResult
             {
                 IsGoodTrade = !isKilling,
                 MyCreatures = new List<Card>(){myCreature},
                 OppCreature = oppCreature,
-                MyDeadCreaturesNumber = isKilling ? 1 : 0
+                MyDeadCreatures = myDeadCreatures
             };
         }
 
@@ -724,14 +732,19 @@ namespace LegendsOfCodeAndMagic
                     //ищем юнита с ядом
                     var lethalCreature = allAtackingCreatures.Where(c => c.IsLethal).OrderBy(c => c.Attack + c.Defense)
                         .FirstOrDefault();
+
                     if (lethalCreature != null)
+                    {
+                        var myDeadCreatures = new List<Card>();
+                        if (IsKilling(targetCreature, lethalCreature)) myDeadCreatures.Add(lethalCreature);
                         return new TradeResult()
                         {
                             IsGoodTrade = true,
                             MyCreatures = new List<Card>() {lethalCreature},
                             OppCreature = targetCreature,
-                            MyDeadCreaturesNumber = IsKilling(targetCreature, lethalCreature) ? 1 : 0
+                            MyDeadCreatures = myDeadCreatures
                         };
+                    }
                 }
             }           
 
@@ -837,7 +850,7 @@ namespace LegendsOfCodeAndMagic
 
             if (IsKillingOppHero(oppHeroHp, allAttackingCreatures, true))
             {
-                var killHeroTradeResult = new TradeResult() {IsGoodTrade = true, MyDeadCreaturesNumber = 0};
+                var killHeroTradeResult = new TradeResult() {IsGoodTrade = true, MyDeadCreatures = new List<Card>()};
                 foreach (var creature in allAttackingCreatures)
                 {
                     killHeroTradeResult.MyCreatures.Add(creature);
@@ -879,7 +892,7 @@ namespace LegendsOfCodeAndMagic
                 }
             }
 
-            var attackHeroTradeResult = new TradeResult() {IsGoodTrade = false, MyDeadCreaturesNumber = 0};
+            var attackHeroTradeResult = new TradeResult() {IsGoodTrade = false, MyDeadCreatures = new List<Card>()};
             foreach (var creature in allAttackingCreatures)
             {
                 attackHeroTradeResult.MyCreatures.Add(creature);
@@ -1000,7 +1013,7 @@ namespace LegendsOfCodeAndMagic
                     {
                         IsGoodTrade = true,
                         MyCreatures = new List<Card>(),
-                        MyDeadCreaturesNumber = 0,
+                        MyDeadCreatures = new List<Card>(),
                         OppCreature = creature
                     });
                 }
