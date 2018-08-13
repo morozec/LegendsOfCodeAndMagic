@@ -156,12 +156,12 @@ namespace LegendsOfCodeAndMagic
 
         static IList<int> GetBadCardIds()
         {
-            return new List<int>() { 57, 4, 100, 140, 138, 143 };
+            return new List<int>() { 57, 4, 100, 140, 138, 143, 83, 86, 2 };
         }
 
         static IList<int> GetGoodCardIds()
         {
-            return new List<int>() { 151 };
+            return new List<int>() { 151, 53 };
         }
 
         static IDictionary<int, int> GetManaCurve()
@@ -203,15 +203,13 @@ namespace LegendsOfCodeAndMagic
                 if (card.IsCreature)
                 {
                     if (card.IsCharge) weight += 0.5;
-                    if (card.IsGuard) weight += 0.5;
                 }
             }
             else
             {
                 weight += Math.Abs(card.Attack);
                 weight += Math.Abs(card.Defense);
-                weight /= 2;
-
+                
                 if (card.Abilities == "BCDGLW") weight += 1;
             }
 
