@@ -1038,8 +1038,14 @@ namespace LegendsOfCodeAndMagic
             for (int i = 0; i < oppCreatures.Count; ++i)
             {
                 var creature = oppCreatures[i];
-
                 if (redItemsTragets.Values.Any(v => v == creature.InstanceId)) continue;//TODO: монжо наложить 2 красных шмотки на 1 существо
+                if (redItem.CardNumber == 151) //убивающая всех карта
+                {
+                    var value = creature.Attack + creature.Defense;
+                    if (creature.IsWard) value *= 2;
+                    else if (creature.IsLethal) value *= 2;
+                    if (value < 10) continue;
+                }
 
                 var newCreature = UpdateCreatureWithItem(new Card(creature), redItem);
                 oppCreatures[i] = newCreature;
