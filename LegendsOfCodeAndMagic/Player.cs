@@ -337,6 +337,11 @@ namespace LegendsOfCodeAndMagic
                     manaLeft -= item.Cost;
                     var targetCreature = allCards.Single(c => c.InstanceId == redItemsTargets[item]);
                     UpdateCreatureWithItem(targetCreature, item);
+                    if (targetCreature.Defense <= 0)
+                    {
+                        allCards.Remove(targetCreature);
+                        allCreatures.Remove(targetCreature);
+                    }
                     resultStr += $"USE {item.InstanceId} {redItemsTargets[item]};";
                 }
 
