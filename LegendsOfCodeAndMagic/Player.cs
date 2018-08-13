@@ -331,7 +331,8 @@ namespace LegendsOfCodeAndMagic
                     UpdateCreatureWithItem(targetCreature, item);
                     resultStr += $"USE {item.InstanceId} {redItemsTargets[item]};";
                 }
-                
+
+                allAtackingCreatures = GetAllAttackingCreatures(allCreatures, new List<Card>());
                 noItemTradeResults = GetAttackTargets(allCreatures.Where(c=>c.Location == -1).ToList(),
                     allAtackingCreatures,
                     allTableCreatures,
