@@ -1050,6 +1050,11 @@ namespace LegendsOfCodeAndMagic
                     else if (creature.IsLethal) value *= 2;
                     if (value < 10) continue;
                 }
+                else if (redItem.CardNumber == 152) //топор -7
+                {
+                    if (creature.IsWard) continue;
+                    if (creature.Defense < 5 || creature.Attack + creature.Defense < 10) continue;
+                }
 
                 var newCreature = UpdateCreatureWithItem(new Card(creature), redItem);
                 oppCreatures[i] = newCreature;
