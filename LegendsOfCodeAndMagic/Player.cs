@@ -209,6 +209,7 @@ namespace LegendsOfCodeAndMagic
             {
                 weight += Math.Abs(card.Attack);
                 weight += Math.Abs(card.Defense);
+                weight /= 2d;
                 
                 if (card.Abilities == "BCDGLW") weight += 1;
             }
