@@ -555,7 +555,7 @@ namespace LegendsOfCodeAndMagic
                 //}
             }
 
-            return resCardIndex;
+            return resCardIndex >= 0 ? resCardIndex : 0;
         }
 
         #region SUMMON
