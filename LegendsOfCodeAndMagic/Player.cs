@@ -923,12 +923,16 @@ namespace LegendsOfCodeAndMagic
                 }
             }
 
-            var attackHeroTradeResult = new TradeResult() { IsGoodTrade = false, MyDeadCreatures = new List<Card>() };
-            foreach (var creature in allAttackingCreatures)
+            if (allAttackingCreatures.Any())
             {
-                attackHeroTradeResult.MyCreatures.Add(creature);
+                var attackHeroTradeResult = new TradeResult() {IsGoodTrade = false, MyDeadCreatures = new List<Card>()};
+                foreach (var creature in allAttackingCreatures)
+                {
+                    attackHeroTradeResult.MyCreatures.Add(creature);
+                }
+
+                attackTargets.Add(attackHeroTradeResult);
             }
-            attackTargets.Add(attackHeroTradeResult);
 
             return attackTargets;
         }
@@ -1057,9 +1061,18 @@ namespace LegendsOfCodeAndMagic
                 }
 
                 var newCreature = UpdateCreatureWithItem(new Card(creature), redItem);
-                oppCreatures[i] = newCreature;
 
-                var attackTargets = GetAttackTargets(oppCreatures,
+                IList<Card> newOppCreatures = new List<Card>(oppCreatures);
+                if (newCreature.Defense <= 0)
+                {
+                    newOppCreatures.RemoveAt(i);
+                }
+                else
+                {
+                    newOppCreatures[i] = newCreature; 
+                }
+
+                var attackTargets = GetAttackTargets(newOppCreatures,
                     new List<Card>(allAtackingCreatures), allTableCreatures, oppHeroHp, myHeroHp);
 
                 if (newCreature.Defense <= 0)
@@ -1079,6 +1092,7 @@ namespace LegendsOfCodeAndMagic
                     bestTradeResults = attackTargets;
                     cardIndex = i;
                 }
+
             }
 
             return cardIndex >= 0 ? oppCreatures[cardIndex] : null;
