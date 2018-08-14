@@ -156,7 +156,7 @@ namespace LegendsOfCodeAndMagic
 
         static IList<int> GetBadCardIds()
         {
-            return new List<int>() { 57, 4, 100, 140, 138, 143, 83, 86, 2 };
+            return new List<int>() { 57, 4, 100, 140, 138, 143, 83, 86, 2, 142 };
         }
 
         static IList<int> GetGoodCardIds()
