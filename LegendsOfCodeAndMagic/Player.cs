@@ -549,7 +549,20 @@ namespace LegendsOfCodeAndMagic
             }
             var oppSumDamageDiff = oppSumDamage1 - oppSumDamage2;
             if (oppSumDamageDiff != 0) return -oppSumDamageDiff;
-            
+
+
+            var oppSumAttack1 = 0;
+            foreach (var tr in tradeResults1.Where(x => x.OppCreature != null))
+            {
+                oppSumAttack1 += tr.OppCreature.Attack;
+            }
+            var oppSumAttack2 = 0;
+            foreach (var tr in tradeResults2.Where(x => x.OppCreature != null))
+            {
+                oppSumAttack2 += tr.OppCreature.Attack;
+            }
+            var oppSumAttackDiff = oppSumAttack1 - oppSumAttack2;
+            if (oppSumAttackDiff != 0) return -oppSumAttackDiff;
 
             var mySumAttack1 = tradeResults1.Where(x => x.IsGoodTrade && x.OppCreature != null).Sum(tr => tr.MyCreatures.Sum(c => c.Attack));
             var mySumAttack2 = tradeResults2.Where(x => x.IsGoodTrade && x.OppCreature != null).Sum(tr => tr.MyCreatures.Sum(c => c.Attack));
