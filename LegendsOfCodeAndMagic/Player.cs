@@ -169,12 +169,28 @@ namespace LegendsOfCodeAndMagic
             return new Dictionary<int, int>() { { 1, 3 }, { 2, 4 }, { 3, 5 }, { 4, 6 }, { 5, 5 }, { 6, 4 }, { 7, 3 } };
         }
 
+        static IDictionary<int, double> GetConstCardWeights()
+        {
+            return new Dictionary<int, double>()
+            {
+                {36, -0.5 },
+                {47, -0.5 },
+                {133, 2 },
+                {118, 0 },
+                {87, 1.5 },
+                {66, 1.5 },
+                {91, 0.5 },
+            };
+        }
+
         static double GetCardWeight(Card card)
         {
             if (card.IsCreature && card.Attack == 0) return -double.MaxValue;
             //if (card.IsGreenItem && card.Attack == 0) return -double.MaxValue;
             //if (card.IsRedItem && card.Defense >= 0) return -double.MaxValue;
 
+            var constCardWeights = GetConstCardWeights();
+            if (constCardWeights.ContainsKey(card.CardNumber)) return constCardWeights[card.CardNumber];
 
             var weight = 0d;
 
