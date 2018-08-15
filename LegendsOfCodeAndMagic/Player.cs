@@ -337,57 +337,99 @@ namespace LegendsOfCodeAndMagic
                 var manaLeft = myPlayerData.PlayerMana;
                 var resultStr = "";
 
+                //var allCreatures = allCards.Where(t => t.IsCreature).ToList();
+                //var allAtackingCreatures = GetAllAttackingCreatures(allCreatures, new List<Card>());
+                //var allTableCreatures = GetAllTableCreatures(allCreatures, new List<Card>());
+                //var noItemTradeResults = GetAttackTargets(allCreatures.Where(c => c.Location == -1).ToList(),
+                //    allAtackingCreatures,
+                //    allTableCreatures,
+                //    oppPlayerData.PlayerHealth,
+                //    myPlayerData.PlayerHealth);
+
+                //var redItemsTargets = UseRedItems(allCards.Where(c => c.IsRedItem).ToList(),
+                //    manaLeft,
+                //    allCards.Where(c => c.IsCreature).ToList(),
+                //    oppPlayerData.PlayerHealth,
+                //    myPlayerData.PlayerHealth,
+                //    noItemTradeResults);
+
+                //foreach (var item in redItemsTargets.Keys.ToList())
+                //{
+                //    manaLeft -= item.Cost;
+                //    var targetCreature = allCards.Single(c => c.InstanceId == redItemsTargets[item]);
+                //    UpdateCreatureWithItem(targetCreature, item);
+                //    if (targetCreature.Defense <= 0)
+                //    {
+                //        allCards.Remove(targetCreature);
+                //        allCreatures.Remove(targetCreature);
+                //    }
+                //    resultStr += $"USE {item.InstanceId} {redItemsTargets[item]};";
+                //}
+
+                //allAtackingCreatures = GetAllAttackingCreatures(allCreatures, new List<Card>());
+                //noItemTradeResults = GetAttackTargets(allCreatures.Where(c => c.Location == -1).ToList(),
+                //    allAtackingCreatures,
+                //    allTableCreatures,
+                //    oppPlayerData.PlayerHealth,
+                //    myPlayerData.PlayerHealth);
+
+                //var greenItemsTargets = UseGreenItems(allCards.Where(c => c.IsGreenItem).ToList(),
+                //    manaLeft,
+                //    allCards.Where(c => c.IsCreature).ToList(),
+                //    new List<Card>(),
+                //    oppPlayerData.PlayerHealth,
+                //    myPlayerData.PlayerHealth,
+                //    noItemTradeResults);
+                //foreach (var item in greenItemsTargets.Keys.ToList())
+                //{
+                //    manaLeft -= item.Cost;
+                //    var targetCreature = allCards.Single(c => c.InstanceId == greenItemsTargets[item]);
+                //    UpdateCreatureWithItem(targetCreature, item);
+                //    //targetCreature.Attack += it.Key.Attack;
+                //    //targetCreature.Defense += it.Key.Defense;
+                //    resultStr += $"USE {item.InstanceId} {greenItemsTargets[item]};";
+                //}
+
                 var allCreatures = allCards.Where(t => t.IsCreature).ToList();
+                var chargeSummonningCreatures = allCreatures.Where(c => c.Location == 0 && c.IsCharge).ToList();
+
                 var allAtackingCreatures = GetAllAttackingCreatures(allCreatures, new List<Card>());
                 var allTableCreatures = GetAllTableCreatures(allCreatures, new List<Card>());
+
                 var noItemTradeResults = GetAttackTargets(allCreatures.Where(c => c.Location == -1).ToList(),
-                    allAtackingCreatures,
-                    allTableCreatures,
-                    oppPlayerData.PlayerHealth,
-                    myPlayerData.PlayerHealth);
+                        allAtackingCreatures,
+                        allTableCreatures,
+                        oppPlayerData.PlayerHealth,
+                        myPlayerData.PlayerHealth);
 
-                var redItemsTargets = UseRedItems(allCards.Where(c => c.IsRedItem).ToList(),
-                    manaLeft,
-                    allCards.Where(c => c.IsCreature).ToList(),
+                var tradeCards = PlayTradeCards(allCreatures,
+                    chargeSummonningCreatures,
+                    allCards.Where(c => c.IsRedItem).ToList(),
+                    allCards.Where(c => c.IsGreenItem).ToList(),
                     oppPlayerData.PlayerHealth,
                     myPlayerData.PlayerHealth,
-                    noItemTradeResults);
+                    noItemTradeResults,
+                    manaLeft);
 
-                foreach (var item in redItemsTargets.Keys.ToList())
+                foreach (var tc in tradeCards)
                 {
-                    manaLeft -= item.Cost;
-                    var targetCreature = allCards.Single(c => c.InstanceId == redItemsTargets[item]);
-                    UpdateCreatureWithItem(targetCreature, item);
-                    if (targetCreature.Defense <= 0)
+                    manaLeft -= tc.Key.Cost;
+                    if (tc.Key.IsCreature)
                     {
-                        allCards.Remove(targetCreature);
-                        allCreatures.Remove(targetCreature);
+                        tc.Key.Location = 1;
+                        resultStr += $"SUMMON {tc.Key.InstanceId};";
                     }
-                    resultStr += $"USE {item.InstanceId} {redItemsTargets[item]};";
-                }
-
-                allAtackingCreatures = GetAllAttackingCreatures(allCreatures, new List<Card>());
-                noItemTradeResults = GetAttackTargets(allCreatures.Where(c => c.Location == -1).ToList(),
-                    allAtackingCreatures,
-                    allTableCreatures,
-                    oppPlayerData.PlayerHealth,
-                    myPlayerData.PlayerHealth);
-
-                var greenItemsTargets = UseGreenItems(allCards.Where(c => c.IsGreenItem).ToList(),
-                    manaLeft,
-                    allCards.Where(c => c.IsCreature).ToList(),
-                    new List<Card>(),
-                    oppPlayerData.PlayerHealth,
-                    myPlayerData.PlayerHealth,
-                    noItemTradeResults);
-                foreach (var item in greenItemsTargets.Keys.ToList())
-                {
-                    manaLeft -= item.Cost;
-                    var targetCreature = allCards.Single(c => c.InstanceId == greenItemsTargets[item]);
-                    UpdateCreatureWithItem(targetCreature, item);
-                    //targetCreature.Attack += it.Key.Attack;
-                    //targetCreature.Defense += it.Key.Defense;
-                    resultStr += $"USE {item.InstanceId} {greenItemsTargets[item]};";
+                    else
+                    {
+                        var targetCreature = allCards.Single(c => c.InstanceId == tc.Value);
+                        UpdateCreatureWithItem(targetCreature, tc.Key);
+                        if (targetCreature.Defense <= 0)
+                        {
+                            allCards.Remove(targetCreature);
+                            allCreatures.Remove(targetCreature);
+                        }
+                        resultStr += $"USE {tc.Key.InstanceId} {tc.Value};";
+                    }
                 }
 
                 var myCreaturesOnBoardCount = allCards.Count(c => c.IsCreature && c.Location == 1);
@@ -404,24 +446,25 @@ namespace LegendsOfCodeAndMagic
                     resultStr += $"SUMMON {card.InstanceId};";
                 }
 
-                greenItemsTargets = UseGreenItems(
-                    allCards.Where(c =>
-                        c.IsGreenItem && !greenItemsTargets.Keys.Contains(c)).ToList(),
-                    manaLeft,
-                    allCards.Where(c => c.IsCreature).ToList(),
-                    summonningCreatures,
-                    oppPlayerData.PlayerHealth,
-                    myPlayerData.PlayerHealth,
-                    null);
-                foreach (var item in greenItemsTargets.Keys.ToList())
-                {
-                    manaLeft -= item.Cost;
-                    var targetCreature = allCards.Single(c => c.InstanceId == greenItemsTargets[item]);
-                    UpdateCreatureWithItem(targetCreature, item);
-                    //targetCreature.Attack += it.Key.Attack;
-                    //targetCreature.Defense += it.Key.Defense;
-                    resultStr += $"USE {item.InstanceId} {greenItemsTargets[item]};";
-                }
+                //TODO!
+                //greenItemsTargets = UseGreenItems(
+                //    allCards.Where(c =>
+                //        c.IsGreenItem && !greenItemsTargets.Keys.Contains(c)).ToList(),
+                //    manaLeft,
+                //    allCards.Where(c => c.IsCreature).ToList(),
+                //    summonningCreatures,
+                //    oppPlayerData.PlayerHealth,
+                //    myPlayerData.PlayerHealth,
+                //    null);
+                //foreach (var item in greenItemsTargets.Keys.ToList())
+                //{
+                //    manaLeft -= item.Cost;
+                //    var targetCreature = allCards.Single(c => c.InstanceId == greenItemsTargets[item]);
+                //    UpdateCreatureWithItem(targetCreature, item);
+                //    //targetCreature.Attack += it.Key.Attack;
+                //    //targetCreature.Defense += it.Key.Defense;
+                //    resultStr += $"USE {item.InstanceId} {greenItemsTargets[item]};";
+                //}
 
 
 
@@ -487,6 +530,21 @@ namespace LegendsOfCodeAndMagic
 
             var resultsDiff = tradeResults1.Count - tradeResults2.Count;
             if (resultsDiff != 0) return -resultsDiff;
+
+            var oppSumDamage1 = 0;
+            foreach (var tr in tradeResults1.Where(x => x.OppCreature != null))
+            {
+                oppSumDamage1 += tr.OppCreature.Attack + tr.OppCreature.Defense;
+            }
+
+            var oppSumDamage2 = 0;
+            foreach (var tr in tradeResults2.Where(x => x.OppCreature != null))
+            {
+                oppSumDamage2 += tr.OppCreature.Attack + tr.OppCreature.Defense;
+            }
+
+            var oppSumDamageDiff = oppSumDamage1 - oppSumDamage2;
+            if (oppSumDamageDiff != 0) return -oppSumDamageDiff;
 
             return 0;
         }
@@ -1028,6 +1086,121 @@ namespace LegendsOfCodeAndMagic
             }
 
             return weakestCreature;
+        }
+
+        static IDictionary<Card, int> PlayTradeCards(IList<Card> allCreatures, IList<Card> chargeSummonnigCreatures, IList<Card> redItems,
+            IList<Card> greenItems, int oppHeroHp, int myHeroHp, IList<TradeResult> noItemTradeResults, int manaLeft)
+        {
+            var oppCreatures = allCreatures.Where(c => c.Location == -1).ToList();
+
+            IList<TradeResult> bestTradeResults = null;
+            Tuple<Card, int> cardToPlay = null;
+            foreach (var chargeCreature in chargeSummonnigCreatures)
+            {
+                if (chargeCreature.Cost > manaLeft) continue;
+
+                var summoningCreatures = new List<Card> {chargeCreature};
+                var chargeAllAtackingCreatures = GetAllAttackingCreatures(allCreatures, summoningCreatures);
+                var chargeAllMyTableCreatures = GetAllTableCreatures(allCreatures, summoningCreatures);
+                var chargeTradeResult = GetAttackTargets(oppCreatures,
+                    chargeAllAtackingCreatures,
+                    chargeAllMyTableCreatures,
+                    oppHeroHp,
+                    myHeroHp);
+
+                var isUsefulItem = CompareTradeResultLists(chargeTradeResult, noItemTradeResults) < 0;
+                if (isUsefulItem && (bestTradeResults == null || CompareTradeResultLists(chargeTradeResult, bestTradeResults) < 0))
+                {
+                    bestTradeResults = chargeTradeResult;
+                    cardToPlay = new Tuple<Card, int>(chargeCreature, -1);
+                }
+            }
+
+            var allAtackingCreatures = GetAllAttackingCreatures(allCreatures, new List<Card>());
+            var allMyTableCreatures = GetAllTableCreatures(allCreatures, new List<Card>());
+
+            foreach (var redItem in redItems)
+            {
+                if (redItem.Cost > manaLeft) continue;
+
+                for (int i = 0; i < oppCreatures.Count; ++i)
+                {
+                    var creature = oppCreatures[i];
+                    if (redItem.CardNumber == 151) //убивающая всех карта
+                    {
+                        var value = creature.Attack + creature.Defense;
+                        if (creature.IsWard) value *= 2;
+                        else if (creature.IsLethal) value *= 2;
+                        if (value < 10) continue;
+                    }
+                    else if (redItem.CardNumber == 152) //топор -7
+                    {
+                        if (creature.IsWard) continue;
+                        if (creature.Defense < 5 || creature.Attack + creature.Defense < 10) continue;
+                    }
+
+                    var newCreature = UpdateCreatureWithItem(new Card(creature), redItem);
+
+                    IList<Card> newOppCreatures = new List<Card>(oppCreatures);
+                    if (newCreature.Defense <= 0)
+                    {
+                        newOppCreatures.RemoveAt(i);
+                    }
+                    else
+                    {
+                        newOppCreatures[i] = newCreature;
+                    }
+                    
+                    var attackTargets = GetAttackTargets(newOppCreatures,
+                        new List<Card>(allAtackingCreatures), allMyTableCreatures, oppHeroHp, myHeroHp);
+
+                    if (newCreature.Defense <= 0)
+                    {
+                        attackTargets.Add(new TradeResult()
+                        {
+                            IsGoodTrade = true,
+                            MyCreatures = new List<Card>(),
+                            MyDeadCreatures = new List<Card>(),
+                            OppCreature = creature
+                        });
+                    }
+
+                    var isUsefulItem = CompareTradeResultLists(attackTargets, noItemTradeResults) < 0;
+                    if (isUsefulItem && (bestTradeResults == null || CompareTradeResultLists(attackTargets, bestTradeResults) < 0))
+                    {
+                        bestTradeResults = attackTargets;
+                        cardToPlay = new Tuple<Card, int>(redItem, creature.InstanceId);
+                    }
+
+                }
+            }
+
+            allAtackingCreatures = GetAllAttackingCreatures(allCreatures, new List<Card>());
+            foreach (var greenItem in greenItems)
+            {
+                if (greenItem.Cost > manaLeft) continue;
+
+                for (int i = 0; i < allAtackingCreatures.Count; ++i)
+                {
+                    var creature = allAtackingCreatures[i];
+                    var newCreature = UpdateCreatureWithItem(new Card(creature), greenItem);
+                    allAtackingCreatures[i] = newCreature;
+
+                    var attackTargets = GetAttackTargets(allCreatures.Where(c => c.Location == -1).ToList(),
+                        new List<Card>(allAtackingCreatures), allMyTableCreatures, oppHeroHp, myHeroHp);
+                    var isUsefulItem = CompareTradeResultLists(attackTargets, noItemTradeResults) < 0;
+                    if (isUsefulItem && (bestTradeResults == null || CompareTradeResultLists(attackTargets, bestTradeResults) < 0))
+                    {
+                        bestTradeResults = attackTargets;
+                        cardToPlay = new Tuple<Card, int>(greenItem, creature.InstanceId);
+                    }
+
+                    allAtackingCreatures[i] = creature;
+                }
+            }
+
+            if (cardToPlay != null) return new Dictionary<Card, int>(){{cardToPlay.Item1, cardToPlay.Item2}};
+            return new Dictionary<Card, int>();
         }
 
         static IDictionary<Card, int> UseGreenItems(IList<Card> items, int manaLeft, IList<Card> allCreatures, IList<Card> summonningCreatures,
