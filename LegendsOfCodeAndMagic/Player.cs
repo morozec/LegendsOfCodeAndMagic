@@ -977,6 +977,7 @@ namespace LegendsOfCodeAndMagic
             var isNecessaryToKill =
                 IsKillingOppHero(myHeroHp, oppCreatures.Where(c => !c.IsGuard).ToList(), false);
 
+            TradeResult bestTradeResult = null;
             foreach (var creature in orderedOppCreatures)
             {
                 var currAttackingCreatures = GetTargetCreatureTradeResult(creature,
@@ -990,9 +991,17 @@ namespace LegendsOfCodeAndMagic
                 if (currAttackingCreatures == null) continue;
                 if (!currAttackingCreatures.IsGoodTrade && !isNecessaryToKill) continue;
 
-                attackTargets.Add(currAttackingCreatures);
+                if (bestTradeResult == null ||
+                    TradeResult.GetResultComparison(currAttackingCreatures, bestTradeResult) < 0)
+                {
+                    bestTradeResult = currAttackingCreatures;
+                }
+            }
 
-                foreach (var ac in currAttackingCreatures.MyCreatures)
+            if (bestTradeResult != null)
+            {
+                attackTargets.Add(bestTradeResult);
+                foreach (var ac in bestTradeResult.MyCreatures)
                 {
                     allAttackingCreatures.Remove(ac);
                 }
