@@ -390,45 +390,50 @@ namespace LegendsOfCodeAndMagic
                 //    resultStr += $"USE {item.InstanceId} {greenItemsTargets[item]};";
                 //}
 
-                var allCreatures = allCards.Where(t => t.IsCreature).ToList();
-                var chargeSummonningCreatures = allCreatures.Where(c => c.Location == 0 && c.IsCharge).ToList();
+                var tradeCards = new List<Card>();
+                while (true)
+                {
+                    var allCreaturesCurr = allCards.Where(t => t.IsCreature).ToList();
+                    var chargeSummonningCreatures = allCreaturesCurr.Where(c => c.Location == 0 && c.IsCharge).ToList();
 
-                var allAtackingCreatures = GetAllAttackingCreatures(allCreatures, new List<Card>());
-                var allTableCreatures = GetAllTableCreatures(allCreatures, new List<Card>());
+                    var allAtackingCreaturesCurr = GetAllAttackingCreatures(allCreaturesCurr, new List<Card>());
+                    var allTableCreaturesCurr = GetAllTableCreatures(allCreaturesCurr, new List<Card>());
 
-                var noItemTradeResults = GetAttackTargets(allCreatures.Where(c => c.Location == -1).ToList(),
-                        allAtackingCreatures,
-                        allTableCreatures,
+                    var noItemTradeResults = GetAttackTargets(allCreaturesCurr.Where(c => c.Location == -1).ToList(),
+                        allAtackingCreaturesCurr,
+                        allTableCreaturesCurr,
                         oppPlayerData.PlayerHealth,
                         myPlayerData.PlayerHealth);
 
-                var tradeCards = PlayTradeCards(allCreatures,
-                    chargeSummonningCreatures,
-                    allCards.Where(c => c.IsRedItem).ToList(),
-                    allCards.Where(c => c.IsGreenItem).ToList(),
-                    oppPlayerData.PlayerHealth,
-                    myPlayerData.PlayerHealth,
-                    noItemTradeResults,
-                    manaLeft);
+                    var tradeCard = PlayTradeCards(allCreaturesCurr,
+                        chargeSummonningCreatures,
+                        allCards.Where(c => c.IsRedItem).ToList(),
+                        allCards.Where(c => c.IsGreenItem).ToList(),
+                        oppPlayerData.PlayerHealth,
+                        myPlayerData.PlayerHealth,
+                        noItemTradeResults,
+                        manaLeft);
 
-                foreach (var tc in tradeCards)
-                {
-                    manaLeft -= tc.Key.Cost;
-                    if (tc.Key.IsCreature)
+                    if (tradeCard == null) break;
+
+                    tradeCards.Add(tradeCard.Item1);
+                    manaLeft -= tradeCard.Item1.Cost;
+                    if (tradeCard.Item1.IsCreature)
                     {
-                        tc.Key.Location = 1;
-                        resultStr += $"SUMMON {tc.Key.InstanceId};";
+                        tradeCard.Item1.Location = 1;
+                        resultStr += $"SUMMON {tradeCard.Item1.InstanceId};";
                     }
                     else
                     {
-                        var targetCreature = allCards.Single(c => c.InstanceId == tc.Value);
-                        UpdateCreatureWithItem(targetCreature, tc.Key);
+                        var targetCreature = allCards.Single(c => c.InstanceId == tradeCard.Item2);
+                        UpdateCreatureWithItem(targetCreature, tradeCard.Item1);
                         if (targetCreature.Defense <= 0)
                         {
                             allCards.Remove(targetCreature);
-                            allCreatures.Remove(targetCreature);
+                            allCreaturesCurr.Remove(targetCreature);
                         }
-                        resultStr += $"USE {tc.Key.InstanceId} {tc.Value};";
+
+                        resultStr += $"USE {tradeCard.Item1.InstanceId} {tradeCard.Item2};";
                     }
                 }
 
@@ -448,7 +453,7 @@ namespace LegendsOfCodeAndMagic
 
                 var greenItemsTargets = UseGreenItems(
                     allCards.Where(c =>
-                        c.IsGreenItem && !tradeCards.Any(tc => tc.Key.InstanceId == c.InstanceId)).ToList(),
+                        c.IsGreenItem && !tradeCards.Any(tc => tc.InstanceId == c.InstanceId)).ToList(),
                     manaLeft,
                     allCards.Where(c => c.IsCreature).ToList(),
                     summonningCreatures,
@@ -483,9 +488,9 @@ namespace LegendsOfCodeAndMagic
                     resultStr += $"USE {it.Key.InstanceId} {it.Value};";
                 }
 
-                allCreatures = allCards.Where(t => t.IsCreature).ToList();
-                allAtackingCreatures = GetAllAttackingCreatures(allCreatures, summonningCreatures);
-                allTableCreatures = GetAllTableCreatures(allCreatures, summonningCreatures);
+                var allCreatures = allCards.Where(t => t.IsCreature).ToList();
+                var allAtackingCreatures = GetAllAttackingCreatures(allCreatures, summonningCreatures);
+                var allTableCreatures = GetAllTableCreatures(allCreatures, summonningCreatures);
                 var attackTargets = GetAttackTargets(allCreatures.Where(c => c.Location == -1).ToList(),
                     allAtackingCreatures,
                     allTableCreatures,
@@ -1090,7 +1095,7 @@ namespace LegendsOfCodeAndMagic
 
        
 
-        static IDictionary<Card, int> PlayTradeCards(IList<Card> allCreatures, IList<Card> chargeSummonnigCreatures, IList<Card> redItems,
+        static Tuple<Card, int> PlayTradeCards(IList<Card> allCreatures, IList<Card> chargeSummonnigCreatures, IList<Card> redItems,
             IList<Card> greenItems, int oppHeroHp, int myHeroHp, IList<TradeResult> noItemTradeResults, int manaLeft)
         {
             var oppCreatures = allCreatures.Where(c => c.Location == -1).ToList();
@@ -1201,8 +1206,7 @@ namespace LegendsOfCodeAndMagic
                 }
             }
 
-            if (cardToPlay != null) return new Dictionary<Card, int>(){{cardToPlay.Item1, cardToPlay.Item2}};
-            return new Dictionary<Card, int>();
+            return cardToPlay;
         }
 
         static Card GetGreenItemCreature(Card greenItem, IList<Card> allCreatures, IList<Card> summonningCreatures,
