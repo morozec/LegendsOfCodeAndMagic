@@ -101,6 +101,10 @@ namespace LegendsOfCodeAndMagic
                                       OppCreature.Attack + OppCreature.Defense >=       //меняемся более слабыми существами
                                       MyDeadCreatures.Sum(c => c.Attack + c.Defense);
                     }
+                    else if (!MyDeadCreatures.Any())//мои не умрут - это хороший размен
+                    {
+                        isGoodTrade = true;
+                    }
                     else if (MyCards.Count == 1 && MyCards[0].IsCreature && MyCards[0].IsLethal)//убиваем врага одним летальщиком
                     {
                         isGoodTrade = true;
@@ -259,16 +263,36 @@ namespace LegendsOfCodeAndMagic
         {
             return new Dictionary<int, double>()
             {
+                {57, -5 },
+                {4, -5 },
+                {100, -5 },
+                {140, -5 },
+                {138, -5 },
+                {143, -5 },
+                {83, -5 },
+                {2, -5 },
+                {142, -5 },
+
+                {24, -0.5 },
                 {36, -0.5 },
                 {47, -0.5 },
+                {149, -0.5 },
                
+                {14, 0 },
                 {61, 0 },
+                {86, 0 },
                 {118, 0 },
+                {129, 0 },
+                {136, 0 },
+
+                {120, 0.25 },
 
                 
                 {91, 0.5 },
+                {130, 0.5 },
 
                 {85, 0.75 },
+                {139, 0.75 },
 
                 {64, 1 },
                 {135, 1 },
@@ -279,6 +303,9 @@ namespace LegendsOfCodeAndMagic
                 
                 
                 {133, 2 },
+
+                {151, 2 },
+                {53, 2 },
             };
         }
 
@@ -681,7 +708,7 @@ namespace LegendsOfCodeAndMagic
             var myDeadCreaturesDiff = tradeResults1.Sum(x => x.MyDeadCreatures.Count()) - tradeResults2.Sum(x => x.MyDeadCreatures.Count());
             if (myDeadCreaturesDiff != 0) return myDeadCreaturesDiff; //кол-во моих убитых существ
 
-            var resultsDiff = tradeResults1.Count - tradeResults2.Count;
+            var resultsDiff = tradeResults1.Count(x => x.OppCreature != null) - tradeResults2.Count(x => x.OppCreature != null);
             if (resultsDiff != 0) return -resultsDiff;//кол-во разменов
 
             if (isNoItemsComparing) return 0;
@@ -735,8 +762,8 @@ namespace LegendsOfCodeAndMagic
 
         static int PickCard(IList<Card> cards, IDictionary<int, int> manaCurve, IDictionary<int, int> handManaCurve)
         {
-            var badCardIds = GetBadCardIds();
-            var goodCardIds = GetGoodCardIds();
+            //var badCardIds = GetBadCardIds();
+            //var goodCardIds = GetGoodCardIds();
 
             var maxWeight = -double.MaxValue;
             var resManaCurveLack = -int.MaxValue;
@@ -746,8 +773,8 @@ namespace LegendsOfCodeAndMagic
             for (int i = 0; i < cards.Count; ++i)
             {
                 var card = cards[i];
-                if (badCardIds.Contains(card.CardNumber)) continue;
-                if (goodCardIds.Contains(card.CardNumber)) return i;
+                //if (badCardIds.Contains(card.CardNumber)) continue;
+                //if (goodCardIds.Contains(card.CardNumber)) return i;
 
                 var cost = card.Cost;
                 if (cost == 0) cost = 1;
