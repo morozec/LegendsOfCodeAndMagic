@@ -276,7 +276,11 @@ namespace LegendsOfCodeAndMagic
             //if (card.IsRedItem && card.Defense >= 0) return -double.MaxValue;
 
             var constCardWeights = GetConstCardWeights();
-            if (constCardWeights.ContainsKey(card.CardNumber)) return constCardWeights[card.CardNumber];
+            if (constCardWeights.ContainsKey(card.CardNumber))
+            {
+                Console.Error.WriteLine($"{constCardWeights[card.CardNumber]} const");
+                return constCardWeights[card.CardNumber];
+            }
 
             var weight = 0d;
 
@@ -989,34 +993,41 @@ namespace LegendsOfCodeAndMagic
                 if (card.IsGuard) oppGuards.Add(card);
             }
 
-            var orderedOppGuards = oppGuards.OrderByDescending(og => og.Defense).ToList();
-            var notKillingGuards = new List<Card>();
-
-            foreach (var guard in orderedOppGuards)
+            while (allAttackingCreatures.Any())
             {
-                var guardAttackingCreatures = GetTargetCreatureTradeResult(guard,
-                    allAttackingCreatures,
-                    new List<Card>(),
-                    guard.Defense,
-                    guard.IsWard,
-                    true,
-                    allMyTableCreatures);
+                TradeResult bestTradeResult = null;
+                foreach (var guard in oppGuards)
+                {
+                    var guardAttackingCreatures = GetTargetCreatureTradeResult(guard,
+                        allAttackingCreatures,
+                        new List<Card>(),
+                        guard.Defense,
+                        guard.IsWard,
+                        true,
+                        allMyTableCreatures);
 
-                if (guardAttackingCreatures == null)
-                {
-                    notKillingGuards.Add(guard);
+                    if (guardAttackingCreatures == null) continue;
+
+                    if (bestTradeResult == null ||
+                        TradeResult.GetResultComparison(guardAttackingCreatures, bestTradeResult) < 0)
+                    {
+                        bestTradeResult = guardAttackingCreatures;
+                    }
                 }
-                else
+                if (bestTradeResult != null)
                 {
-                    attackTargets.Add(guardAttackingCreatures);
-                    foreach (var ac in guardAttackingCreatures.MyCards)
+                    attackTargets.Add(bestTradeResult);
+                    foreach (var ac in bestTradeResult.MyCards)
                     {
                         allAttackingCreatures.Remove(ac);
                     }
+
+                    oppGuards.Remove(bestTradeResult.OppCreature);
                 }
+                else break;
             }
 
-            var notKillingGuard = notKillingGuards.FirstOrDefault();
+            var notKillingGuard = oppGuards.FirstOrDefault();
             if (notKillingGuard != null && allAttackingCreatures.Any())
             {
                 return attackTargets;
