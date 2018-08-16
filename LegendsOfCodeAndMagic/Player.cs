@@ -1034,41 +1034,47 @@ namespace LegendsOfCodeAndMagic
             var leftCreatures = oppCreatures
                 .Where(c => !c.IsGuard).ToList();
 
-            var orderedOppCreatures = leftCreatures.Where(c => c.IsLethal).OrderByDescending(c => c.Defense + c.Attack)
-                .ToList();//сначала убиваем летальщиков
-            orderedOppCreatures.AddRange(leftCreatures.Where(c => !c.IsLethal).OrderByDescending(c => c.Defense + c.Attack));
+            //var orderedOppCreatures = leftCreatures.Where(c => c.IsLethal).OrderByDescending(c => c.Defense + c.Attack)
+            //    .ToList();//сначала убиваем летальщиков
+            //orderedOppCreatures.AddRange(leftCreatures.Where(c => !c.IsLethal).OrderByDescending(c => c.Defense + c.Attack));
 
             var isNecessaryToKill =
                 IsKillingOppHero(myHeroHp, oppCreatures.Where(c => !c.IsGuard).ToList(), false);
 
-            TradeResult bestTradeResult = null;
-            foreach (var creature in orderedOppCreatures)
+            while (allAttackingCreatures.Any())
             {
-                var currAttackingCreatures = GetTargetCreatureTradeResult(creature,
-                    allAttackingCreatures,
-                    new List<Card>(),
-                    creature.Defense,
-                    creature.IsWard,
-                    isNecessaryToKill,
-                    allMyTableCreatures);
-
-                if (currAttackingCreatures == null) continue;
-                if (!currAttackingCreatures.IsGoodTrade && !isNecessaryToKill) continue;
-
-                if (bestTradeResult == null ||
-                    TradeResult.GetResultComparison(currAttackingCreatures, bestTradeResult) < 0)
+                TradeResult bestTradeResult = null;
+                foreach (var creature in leftCreatures)
                 {
-                    bestTradeResult = currAttackingCreatures;
-                }
-            }
+                    var currAttackingCreatures = GetTargetCreatureTradeResult(creature,
+                        allAttackingCreatures,
+                        new List<Card>(),
+                        creature.Defense,
+                        creature.IsWard,
+                        isNecessaryToKill,
+                        allMyTableCreatures);
 
-            if (bestTradeResult != null)
-            {
-                attackTargets.Add(bestTradeResult);
-                foreach (var ac in bestTradeResult.MyCards)
-                {
-                    allAttackingCreatures.Remove(ac);
+                    if (currAttackingCreatures == null) continue;
+                    if (!currAttackingCreatures.IsGoodTrade && !isNecessaryToKill) continue;
+
+                    if (bestTradeResult == null ||
+                        TradeResult.GetResultComparison(currAttackingCreatures, bestTradeResult) < 0)
+                    {
+                        bestTradeResult = currAttackingCreatures;
+                    }
                 }
+
+                if (bestTradeResult != null)
+                {
+                    attackTargets.Add(bestTradeResult);
+                    foreach (var ac in bestTradeResult.MyCards)
+                    {
+                        allAttackingCreatures.Remove(ac);
+                    }
+
+                    leftCreatures.Remove(bestTradeResult.OppCreature);
+                }
+                else break;
             }
 
             if (allAttackingCreatures.Any())
