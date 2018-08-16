@@ -27,7 +27,7 @@ namespace LegendsOfCodeAndMagic
         {
             get
             {
-                foreach (var c in MyCards)
+                foreach (var c in MyCards.Where(c => c.IsCreature))
                 {
                     if (OppCreature != null && Player.IsKilling(OppCreature, c)) yield return c;
                 }
@@ -519,6 +519,7 @@ namespace LegendsOfCodeAndMagic
                             allCreaturesCurr.Remove(targetCreature);
                         }
 
+                        allCards.Remove(tradeCard.Item1);
                         resultStr += $"USE {tradeCard.Item1.InstanceId} {tradeCard.Item2};";
                     }
                 }
@@ -608,25 +609,29 @@ namespace LegendsOfCodeAndMagic
             if (!isHeroKill1 && isHeroKill2) return 1;//убьем героя врага
 
             var goodResultsDiff = tradeResults1.Count(x => x.IsGoodTrade) - tradeResults2.Count(x => x.IsGoodTrade);
-            if (goodResultsDiff != 0) return -goodResultsDiff;
+            if (goodResultsDiff != 0) return -goodResultsDiff;//количество успешных разменов
 
             var killDiffs =
-                tradeResults1.Count(x => x.OppCreature != null && Player.IsKilling(x.MyCards, x.OppCreature)) -
-                tradeResults2.Count(x => x.OppCreature != null && Player.IsKilling(x.MyCards, x.OppCreature));
-
-            if (killDiffs != 0) return -killDiffs;
+                tradeResults1.Count(x => x.OppCreature != null && x.IsKilling) -
+                tradeResults2.Count(x => x.OppCreature != null && x.IsKilling);
+            if (killDiffs != 0) return -killDiffs; //количество убитых существ врага
 
             var myDeadCreaturesValuesDiff = tradeResults1.Sum(x => x.MyDeadCreatures.Sum(c => c.Attack + c.Defense)) -
                                             tradeResults2.Sum(x => x.MyDeadCreatures.Sum(c => c.Attack + c.Defense));
-            if (myDeadCreaturesValuesDiff != 0) return myDeadCreaturesValuesDiff;
+            if (myDeadCreaturesValuesDiff != 0) return myDeadCreaturesValuesDiff;//сумма хар-ик моих убиты существ
 
             var myDeadCreaturesDiff = tradeResults1.Sum(x => x.MyDeadCreatures.Count()) - tradeResults2.Sum(x => x.MyDeadCreatures.Count());
-            if (myDeadCreaturesDiff != 0) return myDeadCreaturesDiff;
+            if (myDeadCreaturesDiff != 0) return myDeadCreaturesDiff; //кол-во моих убитых существ
 
             var resultsDiff = tradeResults1.Count - tradeResults2.Count;
-            if (resultsDiff != 0) return -resultsDiff;
+            if (resultsDiff != 0) return -resultsDiff;//кол-во разменов
 
             if (isNoItemsComparing) return 0;
+
+            var mySumAttack1 = tradeResults1.Where(x => x.IsGoodTrade && x.OppCreature != null).Sum(tr => tr.MyCards.Sum(c => c.Attack));
+            var mySumAttack2 = tradeResults2.Where(x => x.IsGoodTrade && x.OppCreature != null).Sum(tr => tr.MyCards.Sum(c => c.Attack));
+            var mySumAttackDiff = mySumAttack1 - mySumAttack2;
+            if (mySumAttackDiff != 0) return mySumAttackDiff;//сумма атак моих существ
 
             var oppSumDamage1 = 0;
             foreach (var tr in tradeResults1.Where(x => x.OppCreature != null))
@@ -639,7 +644,7 @@ namespace LegendsOfCodeAndMagic
                 oppSumDamage2 += tr.OppCreature.Attack + tr.OppCreature.Defense;
             }
             var oppSumDamageDiff = oppSumDamage1 - oppSumDamage2;
-            if (oppSumDamageDiff != 0) return -oppSumDamageDiff;
+            if (oppSumDamageDiff != 0) return -oppSumDamageDiff;//сумма навыков существ противника, которых мы будем бить
 
 
             var oppSumAttack1 = 0;
@@ -653,12 +658,7 @@ namespace LegendsOfCodeAndMagic
                 oppSumAttack2 += tr.OppCreature.Attack;
             }
             var oppSumAttackDiff = oppSumAttack1 - oppSumAttack2;
-            if (oppSumAttackDiff != 0) return -oppSumAttackDiff;
-
-            var mySumAttack1 = tradeResults1.Where(x => x.IsGoodTrade && x.OppCreature != null).Sum(tr => tr.MyCards.Sum(c => c.Attack));
-            var mySumAttack2 = tradeResults2.Where(x => x.IsGoodTrade && x.OppCreature != null).Sum(tr => tr.MyCards.Sum(c => c.Attack));
-            var mySumAttackDiff = mySumAttack1 - mySumAttack2;
-            if (mySumAttackDiff != 0) return mySumAttackDiff;
+            if (oppSumAttackDiff != 0) return -oppSumAttackDiff;//сумма атак существ противника, которых мы будем бить
 
 
             var heroDamage1 = 0;
@@ -670,7 +670,7 @@ namespace LegendsOfCodeAndMagic
             if (heroTradeResult2 != null) heroDamage2 = heroTradeResult2.MyCards.Sum(c => c.Attack);
 
             var heroDamageDiff = heroDamage1 - heroDamage2;
-            if (heroDamageDiff != 0) return -heroDamageDiff;
+            if (heroDamageDiff != 0) return -heroDamageDiff;//урон по герою врага
 
             return 0;
         }
@@ -1204,6 +1204,9 @@ namespace LegendsOfCodeAndMagic
                     
                     var attackTargets = GetAttackTargets(newOppCreatures,
                         new List<Card>(allAtackingCreatures), allMyTableCreatures, oppHeroHp, myHeroHp);
+                    var itemTradeResult =
+                        attackTargets.SingleOrDefault(x => x.OppCreature != null && x.OppCreature.InstanceId == newCreature.InstanceId);
+                    if (itemTradeResult != null) itemTradeResult.MyCards.Insert(0, redItem);
 
                     if (newCreature.Defense <= 0)
                     {
