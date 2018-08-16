@@ -111,7 +111,10 @@ namespace LegendsOfCodeAndMagic
                     }
                     else if (OppCreature.IsLethal && OppCreature.Attack > 0)//убиваем летальщика врага
                     {
-                        isGoodTrade = Player.HasBetterTableCreature(MyCards.Where(c => c.IsCreature), AllMyTableCreatures);
+                        isGoodTrade = MyDeadCreatures.Sum(c => c.Attack) <= 3 ||
+                                      Player.HasBetterTableCreature(MyCards.Where(c => c.IsCreature),
+                                          AllMyTableCreatures) ||
+                                      OppCreature.Attack + OppCreature.Defense >= MyDeadCreatures.Sum(c => c.Attack + c.Defense);
                     }
                     else //обычный размен
                     {
