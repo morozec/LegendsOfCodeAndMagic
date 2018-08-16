@@ -528,6 +528,49 @@ namespace LegendsOfCodeAndMagic
                     }
                 }
 
+                
+
+                var allCreatures = allCards.Where(t => t.IsCreature).ToList();
+                var allAtackingCreatures = GetAllAttackingCreatures(allCreatures, new List<Card>());
+                var allTableCreatures = GetAllTableCreatures(allCreatures, new List<Card>());
+                var attackTargets = GetAttackTargets(allCreatures.Where(c => c.Location == -1).ToList(),
+                    allAtackingCreatures,
+                    allTableCreatures,
+                    oppPlayerData.PlayerHealth,
+                    myPlayerData.PlayerHealth);
+
+                foreach (var at in attackTargets)
+                {
+                    if (at.OppCreature == null) continue;//проатакуем героя в конце
+
+                    var targetId = at.OppCreature.InstanceId;
+                    var oppCreature = allCards.Single(x => x.InstanceId == targetId);
+                    foreach (var myCreature in at.MyCards)
+                    {
+                        var myCreatureCard = allCards.Single(x => x.InstanceId == myCreature.InstanceId);
+                        resultStr += $"ATTACK {myCreature.InstanceId} {targetId};";
+
+                        UpdateCreatureWithCreature(oppCreature, myCreature);
+                        UpdateCreatureWithCreature(myCreatureCard, oppCreature);
+
+                        if (oppCreature.Defense <= 0)
+                        {
+                            allCards.Remove(oppCreature);
+                            allCreatures.Remove(oppCreature);
+                        }
+
+                        if (myCreatureCard.Defense <= 0)
+                        {
+                            allCards.Remove(myCreatureCard);
+                            allCreatures.Remove(myCreatureCard);
+                        }
+                    }
+                    
+                    
+                }
+
+
+
                 var myCreaturesOnBoardCount = allCards.Count(c => c.IsCreature && c.Location == 1);
                 var summonningCreatures = GetSummonningCreatures(
                     allCards.Where(c => c.IsCreature && c.Location == 0).ToList(),
@@ -542,14 +585,16 @@ namespace LegendsOfCodeAndMagic
                     resultStr += $"SUMMON {card.InstanceId};";
                 }
 
+                var heroAttackTradeResult = attackTargets.SingleOrDefault(x => x.OppCreature == null);
+
                 var greenItemsTargets = UseGreenItems(
                     allCards.Where(c =>
                         c.IsGreenItem && !tradeCards.Any(tc => tc.InstanceId == c.InstanceId)).ToList(),
                     manaLeft,
-                    allCards.Where(c => c.IsCreature).ToList(),
-                    summonningCreatures,
-                    oppPlayerData.PlayerHealth,
-                    myPlayerData.PlayerHealth);
+                    heroAttackTradeResult != null
+                        ? heroAttackTradeResult.MyCards.Where(c => c.IsCreature).ToList()
+                        : new List<Card>(),
+                    summonningCreatures);
                 foreach (var item in greenItemsTargets.Keys.ToList())
                 {
                     manaLeft -= item.Cost;
@@ -559,7 +604,6 @@ namespace LegendsOfCodeAndMagic
                     //targetCreature.Defense += it.Key.Defense;
                     resultStr += $"USE {item.InstanceId} {greenItemsTargets[item]};";
                 }
-
 
 
                 var blueItemsTargets = UseBlueItems(allCards.Where(c => c.IsBlueItem).ToList(),
@@ -579,22 +623,19 @@ namespace LegendsOfCodeAndMagic
                     resultStr += $"USE {it.Key.InstanceId} {it.Value};";
                 }
 
-                var allCreatures = allCards.Where(t => t.IsCreature).ToList();
-                var allAtackingCreatures = GetAllAttackingCreatures(allCreatures, summonningCreatures);
-                var allTableCreatures = GetAllTableCreatures(allCreatures, summonningCreatures);
-                var attackTargets = GetAttackTargets(allCreatures.Where(c => c.Location == -1).ToList(),
-                    allAtackingCreatures,
-                    allTableCreatures,
-                    oppPlayerData.PlayerHealth,
-                    myPlayerData.PlayerHealth);
-
-                foreach (var at in attackTargets)
+               
+                if (heroAttackTradeResult != null)
                 {
-                    var targetId = at.OppCreature != null ? at.OppCreature.InstanceId : -1;
-                    foreach (var myCreature in at.MyCards)
-                        resultStr += $"ATTACK {myCreature.InstanceId} {targetId};";
+                    foreach (var creature in heroAttackTradeResult.MyCards.Where(c => c.IsCreature))
+                    {
+                        resultStr += $"ATTACK {creature.InstanceId} -1;";
+                    }
                 }
 
+                foreach (var summCreature in summonningCreatures.Where(c => c.IsCharge))
+                {
+                    resultStr += $"ATTACK {summCreature.InstanceId} -1;";
+                }
 
                 Console.WriteLine(resultStr);
 
@@ -1261,37 +1302,26 @@ namespace LegendsOfCodeAndMagic
             return cardToPlay;
         }
 
-        static Card GetGreenItemCreature(Card greenItem, IList<Card> allCreatures, IList<Card> summonningCreatures,
-            int oppHeroHp, int myHeroHp)
+        static Card GetGreenItemCreature(IList<Card> attackingHeroCreatures, IList<Card> summonningCreatures)
         {
-            var allAtackingCreatures = GetAllAttackingCreatures(allCreatures, summonningCreatures);
-            var allTableCreatures = GetAllTableCreatures(allCreatures, summonningCreatures);
-
-            IList<TradeResult> bestTradeResults = null;
-            int cardIndex = -1;
-            for (int i = 0; i < allAtackingCreatures.Count; ++i)
+            Card weakestCreature = null;
+            foreach (var c in attackingHeroCreatures)
             {
-                var creature = allAtackingCreatures[i];
-                var newCreature = UpdateCreatureWithItem(new Card(creature), greenItem);
-                allAtackingCreatures[i] = newCreature;
-
-                var attackTargets = GetAttackTargets(allCreatures.Where(c => c.Location == -1).ToList(),
-                    new List<Card>(allAtackingCreatures), allTableCreatures, oppHeroHp, myHeroHp);
-               
-                if (bestTradeResults == null || CompareTradeResultLists(attackTargets, bestTradeResults, false) < 0)
-                {
-                    bestTradeResults = attackTargets;
-                    cardIndex = i;
-                }
-
-                allAtackingCreatures[i] = creature;
+                if (weakestCreature == null ||
+                    c.Attack + c.Defense < weakestCreature.Attack + weakestCreature.Defense)
+                    weakestCreature = c;
             }
 
-            if (cardIndex != -1) return allAtackingCreatures[cardIndex];
-            //            if (allCreatures.Count(c => c.Location == -1) == 0) return null;//не качаем свое существо, если на столе нет врага
+            foreach (var sc in summonningCreatures.Where(x => x.IsCharge))
+            {
+                if (weakestCreature == null ||
+                    sc.Attack + sc.Defense < weakestCreature.Attack + weakestCreature.Defense)
+                    weakestCreature = sc;
+            }
 
-            Card weakestCreature = null;
-            foreach (var sc in summonningCreatures)
+            if (weakestCreature != null) return weakestCreature;
+
+            foreach (var sc in summonningCreatures.Where(x => !x.IsCharge))
             {
                 if (weakestCreature == null ||
                     sc.Attack + sc.Defense < weakestCreature.Attack + weakestCreature.Defense)
@@ -1301,15 +1331,16 @@ namespace LegendsOfCodeAndMagic
             return weakestCreature;
         }
 
-        static IDictionary<Card, int> UseGreenItems(IList<Card> items, int manaLeft, IList<Card> allCreatures, IList<Card> summonningCreatures,
-            int oppHeroHp, int myHeroHp)
+        static IDictionary<Card, int> UseGreenItems(IList<Card> items, int manaLeft, IList<Card> attackingHeroCreatures, 
+            IList<Card> summonningCreatures
+            )
         {
             var itemTargets = new Dictionary<Card, int>();
             var maxItems = GetMaxCards(items, new List<Card>(), manaLeft, int.MaxValue);
 
             foreach (var item in maxItems)
             {
-                Card giCreature = GetGreenItemCreature(item, allCreatures, summonningCreatures, oppHeroHp, myHeroHp);
+                Card giCreature = GetGreenItemCreature(attackingHeroCreatures, summonningCreatures);
                 if (giCreature != null)
                 {
                     itemTargets.Add(item, giCreature.InstanceId);
