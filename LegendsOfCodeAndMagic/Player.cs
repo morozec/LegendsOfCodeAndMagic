@@ -154,6 +154,11 @@ namespace LegendsOfCodeAndMagic
 
             if (result1.IsKilling) //isKilling2 тоже true
             {
+                //var res1Value = result1.OppCreature.Attack + result1.OppCreature.Defense;
+                //var res2Value = result2.OppCreature.Attack + result2.OppCreature.Defense;
+                //var resDiff = res1Value - res2Value;
+                //if (resDiff != 0) return -resDiff;
+
                 return result1.GetMySumDamage(false) - result2.GetMySumDamage(false); //если нанесли больше урона в первом случае, 2 варант лучше (в 1 наносим лишний урон)
             }
             else//снимаем щит
