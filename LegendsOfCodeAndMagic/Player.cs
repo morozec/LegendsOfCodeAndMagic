@@ -97,7 +97,7 @@ namespace LegendsOfCodeAndMagic
                     if (!isKilling) //снимаем щит
                     {
                         isGoodTrade = !MyDeadCreatures.Any() || //никто из моих не умерт
-                                      !MyCards.Any(c => c.IsCreature && c.IsLethal) && //не умрут мои летальщики
+                                      !MyCards.Any(c => c.IsCreature && c.IsLethal && c.Attack > 0) && //не умрут мои летальщики
                                       OppCreature.Attack + OppCreature.Defense >=       //меняемся более слабыми существами
                                       MyDeadCreatures.Sum(c => c.Attack + c.Defense);
                     }
@@ -105,7 +105,7 @@ namespace LegendsOfCodeAndMagic
                     {
                         isGoodTrade = true;
                     }
-                    else if (MyCards.Count == 1 && MyCards[0].IsCreature && MyCards[0].IsLethal)//убиваем врага одним летальщиком
+                    else if (MyCards.Count == 1 && MyCards[0].IsCreature && MyCards[0].IsLethal && MyCards[0].Attack > 0)//убиваем врага одним летальщиком
                     {
                         isGoodTrade = true;
                     }
@@ -289,6 +289,8 @@ namespace LegendsOfCodeAndMagic
                 {149, -0.5 },
                
                 {14, -0.25 },
+                {13, -0.25 },
+                {155, -0.25 },
 
                 {36, 0 },
                 {56, 0 },
@@ -297,13 +299,15 @@ namespace LegendsOfCodeAndMagic
                 {91, 0 },
                 {112, 0 },
                 {118, 0 },
-                {129, 0 },
+                
                 {136, 0 },
 
                 {21, 0.25 },
+                {38, 0.25 },
                 {88, 0.25 },
                 {120, 0.25 },
                 {126, 0.25 },
+                {129, 0.25 },
                 {145, 0.25 },
                 {150, 0.25 },
                 {158, 0.25 },
@@ -311,10 +315,11 @@ namespace LegendsOfCodeAndMagic
                
                 
                 {130, 0.5 },
-                {144, 0.5 },
+                
 
                 {85, 0.75 },
                 {139, 0.75 },
+                {144, 0.75 },
 
                 {64, 1 },
                 {135, 1 },
@@ -1002,7 +1007,7 @@ namespace LegendsOfCodeAndMagic
                 {
                     //TODO: не всегда!
                     //ищем юнита с ядом
-                    var lethalCreature = allAtackingCreatures.Where(c => c.IsLethal && !usedCards.Contains(c)).OrderBy(c => c.Attack + c.Defense)
+                    var lethalCreature = allAtackingCreatures.Where(c => c.IsLethal && c.Attack > 0 && !usedCards.Contains(c)).OrderBy(c => c.Attack + c.Defense)
                         .FirstOrDefault();
 
                     if (lethalCreature != null)
@@ -1063,7 +1068,7 @@ namespace LegendsOfCodeAndMagic
         public static bool IsKilling(Card attackingCreature, Card defendingCreature)
         {
             if (defendingCreature.IsWard) return false;
-            if (attackingCreature.IsLethal) return true;
+            if (attackingCreature.IsLethal && attackingCreature.Attack > 0) return true;
             return attackingCreature.Attack >= defendingCreature.Defense;
         }
 
@@ -1073,7 +1078,7 @@ namespace LegendsOfCodeAndMagic
             for (int i = 0; i < attackingCreatures.Count; ++i)
             {
                 if (defendingCreature.IsWard && i == 0) continue;//сняли щит
-                if (attackingCreatures[i].IsLethal) return true;
+                if (attackingCreatures[i].IsLethal && attackingCreatures[i].Attack > 0) return true;
                 hpLeft -= attackingCreatures[i].Attack;
             }
 
