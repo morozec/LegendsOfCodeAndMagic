@@ -99,8 +99,7 @@ namespace LegendsOfCodeAndMagic
                         isGoodTrade = OppCreature.IsWard && 
                                       (!MyDeadCreatures.Any() || //никто из моих не умерт
                                       !MyCards.Any(c => c.IsCreature && c.IsLethal && c.Attack > 0) && //не умрут мои летальщики
-                                      OppCreature.Attack + OppCreature.Defense >=       //меняемся более слабыми существами
-                                      MyDeadCreatures.Sum(c => c.Attack + c.Defense));
+                                       MyDeadCreatures.Sum(c => c.Attack) <= 3);
                     }
                     else if (!MyDeadCreatures.Any())//мои не умрут - это хороший размен
                     {
@@ -287,6 +286,7 @@ namespace LegendsOfCodeAndMagic
                 {20, -0.5 },
                 {24, -0.5 },
                 {47, -0.5 },
+                {131, -0.5 },
                 {149, -0.5 },
 
                 {1, -0.25 },
@@ -296,15 +296,16 @@ namespace LegendsOfCodeAndMagic
                 {56, -0.25 },
                 {72, -0.25 },
                 {86, -0.25 },
+                {91, -0.25 },
                 {93, -0.25 },
                 {130, -0.25 },
                 {155, -0.25 },
 
                 
+                {5, 0 },
                 {36, 0 },
                 {61, 0 },
                 {81, 0 },
-                {91, 0 },
                 {112, 0 },
                 {118, 0 },
                 {128, 0 },
@@ -335,7 +336,6 @@ namespace LegendsOfCodeAndMagic
 
                 {85, 0.75 },
                 {115, 0.75 },
-                {139, 0.75 },
                 {144, 0.75 },
 
                 {52, 1 },
@@ -343,6 +343,8 @@ namespace LegendsOfCodeAndMagic
                 {135, 1 },
                 {137, 1 },
                 {152, 1 },
+
+                {139, 1.25 },
 
                 {66, 1.5 },
                 {87, 1.5 },
