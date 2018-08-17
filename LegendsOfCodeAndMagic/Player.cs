@@ -975,7 +975,7 @@ namespace LegendsOfCodeAndMagic
 
                         else if (trCompare == 0)
                         {
-                            if (card.Attack + currMaxCards.Sum(c => c.Attack) > maxCards.Sum(c => c.Attack))
+                            if (card.Attack + card.Defense + currMaxCards.Sum(c => c.Attack + c.Defense) > maxCards.Sum(c => c.Attack + c.Defense))
                             {
                                 maxCards = tmpCards;
                                 bestTradeResults = tradeResults;
@@ -984,7 +984,7 @@ namespace LegendsOfCodeAndMagic
                     }
                     else
                     {
-                        if (card.Attack + currMaxCards.Sum(c => c.Attack) > maxCards.Sum(c => c.Attack))
+                        if (card.Attack + card.Defense + currMaxCards.Sum(c => c.Attack + c.Defense) > maxCards.Sum(c => c.Attack + c.Defense))
                         {
                             maxCards = new List<Card>() { card };
                             maxCards.AddRange(currMaxCards);
