@@ -1025,7 +1025,7 @@ namespace LegendsOfCodeAndMagic
                         allAtackingCreatures,
                         newUsedCards,
                         hpLeft - attackingCard.Attack,
-                        hasWard,
+                        attackingCard.Attack > 0 ? false : hasWard,
                         isNecessaryToKill,
                         allMyTableCreatures);
                 }
@@ -1035,7 +1035,7 @@ namespace LegendsOfCodeAndMagic
 
             }
 
-            if (bestTradeResult == null && targetCreature.IsWard && usedCards.Any())
+            if ((bestTradeResult == null || !bestTradeResult.IsGoodTrade) && targetCreature.IsWard && usedCards.Any())
             {
                 bestTradeResult =
                     new TradeResult(targetCreature.Attack > 0 ? new List<Card>() {usedCards[0]} : usedCards,
