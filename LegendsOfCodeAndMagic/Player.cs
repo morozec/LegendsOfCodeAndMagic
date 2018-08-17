@@ -96,10 +96,11 @@ namespace LegendsOfCodeAndMagic
 
                     if (!isKilling) //снимаем щит
                     {
-                        isGoodTrade = !MyDeadCreatures.Any() || //никто из моих не умерт
+                        isGoodTrade = OppCreature.IsWard && 
+                                      (!MyDeadCreatures.Any() || //никто из моих не умерт
                                       !MyCards.Any(c => c.IsCreature && c.IsLethal && c.Attack > 0) && //не умрут мои летальщики
                                       OppCreature.Attack + OppCreature.Defense >=       //меняемся более слабыми существами
-                                      MyDeadCreatures.Sum(c => c.Attack + c.Defense);
+                                      MyDeadCreatures.Sum(c => c.Attack + c.Defense));
                     }
                     else if (!MyDeadCreatures.Any())//мои не умрут - это хороший размен
                     {
@@ -769,8 +770,8 @@ namespace LegendsOfCodeAndMagic
             var myDeadCreaturesDiff = tradeResults1.Sum(x => x.MyDeadCreatures.Count()) - tradeResults2.Sum(x => x.MyDeadCreatures.Count());
             if (myDeadCreaturesDiff != 0) return myDeadCreaturesDiff; //кол-во моих убитых существ
 
-            var resultsDiff = tradeResults1.Count(x => x.OppCreature != null) - tradeResults2.Count(x => x.OppCreature != null);
-            if (resultsDiff != 0) return -resultsDiff;//кол-во разменов
+            //var resultsDiff = tradeResults1.Count(x => x.OppCreature != null) - tradeResults2.Count(x => x.OppCreature != null);
+            //if (resultsDiff != 0) return -resultsDiff;//кол-во разменов
 
             var wards1 = tradeResults1.Where(tr => tr.OppCreature != null && tr.OppCreature.Attack > 0).Sum(tr => tr.MyCards.Count(x => x.IsCreature && x.IsWard));
             var wards2 = tradeResults2.Where(tr => tr.OppCreature != null && tr.OppCreature.Attack > 0).Sum(tr => tr.MyCards.Count(x => x.IsCreature && x.IsWard));
@@ -779,8 +780,8 @@ namespace LegendsOfCodeAndMagic
 
             if (isNoItemsComparing) return 0;
 
-            var mySumAttack1 = tradeResults1.Where(x => x.IsGoodTrade && x.OppCreature != null).Sum(tr => tr.MyCards.Sum(c => c.Attack));
-            var mySumAttack2 = tradeResults2.Where(x => x.IsGoodTrade && x.OppCreature != null).Sum(tr => tr.MyCards.Sum(c => c.Attack));
+            var mySumAttack1 = tradeResults1.Where(x => x.IsGoodTrade && x.OppCreature != null).Sum(tr => tr.MyCards.Sum(c => c.IsCreature ? c.Attack : Math.Abs(c.Defense)));
+            var mySumAttack2 = tradeResults2.Where(x => x.IsGoodTrade && x.OppCreature != null).Sum(tr => tr.MyCards.Sum(c => c.IsCreature ? c.Attack : Math.Abs(c.Defense)));
             var mySumAttackDiff = mySumAttack1 - mySumAttack2;
             if (mySumAttackDiff != 0) return mySumAttackDiff;//сумма атак моих существ
 
@@ -814,11 +815,11 @@ namespace LegendsOfCodeAndMagic
 
             var heroDamage1 = 0;
             var heroTradeResult1 = tradeResults1.SingleOrDefault(x => x.OppCreature == null);
-            if (heroTradeResult1 != null) heroDamage1 = heroTradeResult1.MyCards.Sum(c => c.Attack);
+            if (heroTradeResult1 != null) heroDamage1 = heroTradeResult1.MyCards.Sum(c => c.IsCreature ? c.Attack : Math.Abs(c.Defense));
 
             var heroDamage2 = 0;
             var heroTradeResult2 = tradeResults2.SingleOrDefault(x => x.OppCreature == null);
-            if (heroTradeResult2 != null) heroDamage2 = heroTradeResult2.MyCards.Sum(c => c.Attack);
+            if (heroTradeResult2 != null) heroDamage2 = heroTradeResult2.MyCards.Sum(c => c.IsCreature ? c.Attack : Math.Abs(c.Defense));
 
             var heroDamageDiff = heroDamage1 - heroDamage2;
             if (heroDamageDiff != 0) return -heroDamageDiff;//урон по герою врага
@@ -1367,10 +1368,11 @@ namespace LegendsOfCodeAndMagic
                         attackTargets.SingleOrDefault(x => x.OppCreature != null && x.OppCreature.InstanceId == newCreature.InstanceId);
                     if (itemTradeResult != null) itemTradeResult.MyCards.Insert(0, rbItem);
 
-                    if (newCreature.Defense <= 0)
-                    {
-                        attackTargets.Add(new TradeResult(new List<Card>() {rbItem}, creature, allMyTableCreatures, oppHeroHp));
-                    }
+                    var tr = attackTargets.SingleOrDefault(x =>
+                        x.OppCreature != null && x.OppCreature.InstanceId == creature.InstanceId);
+                    if (tr != null) tr.MyCards.Insert(0, rbItem);
+                    else attackTargets.Add(new TradeResult(new List<Card>() { rbItem }, creature, allMyTableCreatures, oppHeroHp));
+
 
                     var isUsefulItem = CompareTradeResultLists(attackTargets, noItemTradeResults, true) < 0;
                     if (isUsefulItem && (bestTradeResults == null || CompareTradeResultLists(attackTargets, bestTradeResults, false) < 0))
