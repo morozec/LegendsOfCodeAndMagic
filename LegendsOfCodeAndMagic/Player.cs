@@ -642,6 +642,7 @@ namespace LegendsOfCodeAndMagic
 
                 var heroAttackTradeResult = attackTargets.SingleOrDefault(x => x.OppCreature == null);
 
+                //TODO: не только атакующие героя, но и просто стоящие
                 var greenItemsTargets = UseGreenItems(
                     allCards.Where(c =>
                         c.IsGreenItem && !tradeCards.Any(tc => tc.InstanceId == c.InstanceId)).ToList(),
@@ -1357,10 +1358,10 @@ namespace LegendsOfCodeAndMagic
             return cardToPlay;
         }
 
-        static Card GetGreenItemCreature(IList<Card> attackingHeroCreatures, IList<Card> summonningCreatures)
+        static Card GetGreenItemCreature(IList<Card> notTradingCreatures, IList<Card> summonningCreatures)
         {
             Card weakestCreature = null;
-            foreach (var c in attackingHeroCreatures)
+            foreach (var c in notTradingCreatures)
             {
                 if (weakestCreature == null ||
                     c.Attack + c.Defense < weakestCreature.Attack + weakestCreature.Defense)
@@ -1386,7 +1387,7 @@ namespace LegendsOfCodeAndMagic
             return weakestCreature;
         }
 
-        static IDictionary<Card, int> UseGreenItems(IList<Card> items, int manaLeft, IList<Card> attackingHeroCreatures, 
+        static IDictionary<Card, int> UseGreenItems(IList<Card> items, int manaLeft, IList<Card> notTradingCreatures, 
             IList<Card> summonningCreatures
             )
         {
@@ -1395,7 +1396,7 @@ namespace LegendsOfCodeAndMagic
 
             foreach (var item in maxItems)
             {
-                Card giCreature = GetGreenItemCreature(attackingHeroCreatures, summonningCreatures);
+                Card giCreature = GetGreenItemCreature(notTradingCreatures, summonningCreatures);
                 if (giCreature != null)
                 {
                     itemTargets.Add(item, giCreature.InstanceId);
