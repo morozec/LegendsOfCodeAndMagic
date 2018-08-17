@@ -101,6 +101,10 @@ namespace LegendsOfCodeAndMagic
                                       !MyCards.Any(c => c.IsCreature && c.IsLethal && c.Attack > 0) && //не умрут мои летальщики
                                        MyDeadCreatures.Sum(c => c.Attack) <= 3);
                     }
+                    else if (OppCreature.IsGuard) //стенку всегда надо сносить
+                    {
+                        isGoodTrade = true;
+                    }
                     else if (!MyDeadCreatures.Any())//мои не умрут - это хороший размен
                     {
                         isGoodTrade = true;
@@ -1420,11 +1424,14 @@ namespace LegendsOfCodeAndMagic
             return cardToPlay;
         }
 
-        static Card GetGreenItemCreature(IList<Card> notTradingCreatures, IList<Card> summonningCreatures)
+        static Card GetGreenItemCreature(Card item, IList<Card> notTradingCreatures, IList<Card> summonningCreatures)
         {
             Card weakestCreature = null;
             foreach (var c in notTradingCreatures)
             {
+                if (c.IsWard && item.IsWard) continue;
+                if (c.IsLethal && item.IsLethal) continue;
+
                 if (weakestCreature == null ||
                     c.Attack + c.Defense < weakestCreature.Attack + weakestCreature.Defense)
                     weakestCreature = c;
@@ -1432,6 +1439,9 @@ namespace LegendsOfCodeAndMagic
 
             foreach (var sc in summonningCreatures.Where(x => x.IsCharge))
             {
+                if (sc.IsWard && item.IsWard) continue;
+                if (sc.IsLethal && item.IsLethal) continue;
+
                 if (weakestCreature == null ||
                     sc.Attack + sc.Defense < weakestCreature.Attack + weakestCreature.Defense)
                     weakestCreature = sc;
@@ -1441,6 +1451,9 @@ namespace LegendsOfCodeAndMagic
 
             foreach (var sc in summonningCreatures.Where(x => !x.IsCharge))
             {
+                if (sc.IsWard && item.IsWard) continue;
+                if (sc.IsLethal && item.IsLethal) continue;
+
                 if (weakestCreature == null ||
                     sc.Attack + sc.Defense < weakestCreature.Attack + weakestCreature.Defense)
                     weakestCreature = sc;
@@ -1458,7 +1471,7 @@ namespace LegendsOfCodeAndMagic
 
             foreach (var item in maxItems)
             {
-                Card giCreature = GetGreenItemCreature(notTradingCreatures, summonningCreatures);
+                Card giCreature = GetGreenItemCreature(item, notTradingCreatures, summonningCreatures);
                 if (giCreature != null)
                 {
                     itemTargets.Add(item, giCreature.InstanceId);
