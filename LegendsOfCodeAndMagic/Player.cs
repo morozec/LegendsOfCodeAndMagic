@@ -1012,7 +1012,8 @@ namespace LegendsOfCodeAndMagic
 
                     if (lethalCreature != null)
                     {
-                        return new TradeResult(new List<Card>() {lethalCreature},
+                        var cards = new List<Card>(usedCards) {lethalCreature};
+                        return new TradeResult(cards,
                             targetCreature,
                             allMyTableCreatures,
                             Int32.MaxValue);
