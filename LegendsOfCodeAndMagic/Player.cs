@@ -302,9 +302,8 @@ namespace LegendsOfCodeAndMagic
 
                 
                 {36, 0 },
-                
                 {61, 0 },
-               
+                {81, 0 },
                 {91, 0 },
                 {112, 0 },
                 {118, 0 },
