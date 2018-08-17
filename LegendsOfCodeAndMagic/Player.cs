@@ -727,6 +727,11 @@ namespace LegendsOfCodeAndMagic
             var resultsDiff = tradeResults1.Count(x => x.OppCreature != null) - tradeResults2.Count(x => x.OppCreature != null);
             if (resultsDiff != 0) return -resultsDiff;//кол-во разменов
 
+            var wards1 = tradeResults1.Sum(tr => tr.MyCards.Count(x => x.IsCreature && x.IsWard));
+            var wards2 = tradeResults2.Sum(tr => tr.MyCards.Count(x => x.IsCreature && x.IsWard));
+            var wardDiff = wards1 - wards2;
+            if (wardDiff != 0) return wardDiff; //сколько щитов я потеряю
+
             if (isNoItemsComparing) return 0;
 
             var mySumAttack1 = tradeResults1.Where(x => x.IsGoodTrade && x.OppCreature != null).Sum(tr => tr.MyCards.Sum(c => c.Attack));
