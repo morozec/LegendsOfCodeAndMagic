@@ -293,6 +293,7 @@ namespace LegendsOfCodeAndMagic
                 {13, -0.25 },
                 {56, -0.25 },
                 {72, -0.25 },
+                {86, -0.25 },
                 {130, -0.25 },
                 {155, -0.25 },
 
@@ -300,7 +301,7 @@ namespace LegendsOfCodeAndMagic
                 {36, 0 },
                 
                 {61, 0 },
-                {86, 0 },
+               
                 {91, 0 },
                 {112, 0 },
                 {118, 0 },
@@ -312,6 +313,7 @@ namespace LegendsOfCodeAndMagic
 
                 {21, 0.25 },
                 {38, 0.25 },
+                {70, 0.25 },
                 {88, 0.25 },
                 {120, 0.25 },
                 {126, 0.25 },
@@ -1339,9 +1341,9 @@ namespace LegendsOfCodeAndMagic
                     var creature = oppCreatures[i];
                     if (rbItem.CardNumber == 151) //убивающая всех карта
                     {
-                        var value = creature.Attack + creature.Defense;
+                        double value = creature.Attack + creature.Defense;
                         if (creature.IsWard) value *= 2;
-                        else if (creature.IsLethal) value *= 2;
+                        if (creature.IsLethal) value *= 1.5;
                         if (value < 10) continue;
                     }
                     else if (rbItem.CardNumber == 152) //топор -7
