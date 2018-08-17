@@ -324,6 +324,7 @@ namespace LegendsOfCodeAndMagic
                 {87, 1.5 },
                 
                 
+                {44, 2 },
                 {133, 2 },
 
                 {151, 5 },
@@ -1001,7 +1002,7 @@ namespace LegendsOfCodeAndMagic
                 {
                     //TODO: не всегда!
                     //ищем юнита с ядом
-                    var lethalCreature = allAtackingCreatures.Where(c => c.IsLethal).OrderBy(c => c.Attack + c.Defense)
+                    var lethalCreature = allAtackingCreatures.Where(c => c.IsLethal && !usedCards.Contains(c)).OrderBy(c => c.Attack + c.Defense)
                         .FirstOrDefault();
 
                     if (lethalCreature != null)
