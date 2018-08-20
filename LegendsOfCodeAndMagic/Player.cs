@@ -824,23 +824,23 @@ namespace LegendsOfCodeAndMagic
                 var heroAttackTradeResult = bestTradeResults.SingleOrDefault(x => x.OppCreature == null);
 
                 //TODO: не только атакующие героя, но и просто стоящие
-                var greenItemsTargets = UseGreenItems(
-                    allCards.Where(c =>
-                        c.IsGreenItem && !tradeCards.Any(tc => tc.InstanceId == c.InstanceId)).ToList(),
-                    manaLeft,
-                    heroAttackTradeResult != null
-                        ? heroAttackTradeResult.MyCards.Where(c => c.IsCreature).ToList()
-                        : new List<Card>(),
-                    summonningCreatures);
-                foreach (var item in greenItemsTargets.Keys.ToList())
-                {
-                    manaLeft -= item.Cost;
-                    var targetCreature = allCards.Single(c => c.InstanceId == greenItemsTargets[item]);
-                    UpdateCreatureWithItem(targetCreature, item);
-                    //targetCreature.Attack += it.Key.Attack;
-                    //targetCreature.Defense += it.Key.Defense;
-                    resultStr += $"USE {item.InstanceId} {greenItemsTargets[item]};";
-                }
+                //var greenItemsTargets = UseGreenItems(
+                //    allCards.Where(c =>
+                //        c.IsGreenItem && !tradeCards.Any(tc => tc.InstanceId == c.InstanceId)).ToList(),
+                //    manaLeft,
+                //    heroAttackTradeResult != null
+                //        ? heroAttackTradeResult.MyCards.Where(c => c.IsCreature).ToList()
+                //        : new List<Card>(),
+                //    summonningCreatures);
+                //foreach (var item in greenItemsTargets.Keys.ToList())
+                //{
+                //    manaLeft -= item.Cost;
+                //    var targetCreature = allCards.Single(c => c.InstanceId == greenItemsTargets[item]);
+                //    UpdateCreatureWithItem(targetCreature, item);
+                //    //targetCreature.Attack += it.Key.Attack;
+                //    //targetCreature.Defense += it.Key.Defense;
+                //    resultStr += $"USE {item.InstanceId} {greenItemsTargets[item]};";
+                //}
 
 
                 var redItemsTargets = UseRedItems(allCards.Where(c => c.IsRedItem).ToList(),
