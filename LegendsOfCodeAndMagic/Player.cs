@@ -123,7 +123,24 @@ namespace LegendsOfCodeAndMagic
                     }
                     else //обычный размен
                     {
-                        isGoodTrade = OppCreature.Attack + OppCreature.Defense >= MyDeadCreatures.Sum(c => c.Attack + c.Defense);
+                        if (!OppCreature.IsWard)
+                            isGoodTrade = OppCreature.Attack + OppCreature.Defense >= MyDeadCreatures.Sum(c => c.Attack + c.Defense);
+                        else
+                        {
+                            if (!MyCards.Any()) isGoodTrade = true;
+                            else
+                            {
+                                if (!MyCards[0].IsCreature)
+                                {
+                                    isGoodTrade = OppCreature.Attack + OppCreature.Defense >= MyDeadCreatures.Sum(c => c.Attack + c.Defense);
+                                }
+                                else
+                                {
+                                    isGoodTrade = OppCreature.Attack + OppCreature.Defense >= MyDeadCreatures.Where(c => !Equals(c, MyCards[0])).Sum(c => c.Attack + c.Defense);
+                                }
+                            }
+                        }
+                            
                     }
                 }
                 else
@@ -310,7 +327,7 @@ namespace LegendsOfCodeAndMagic
                 {91, -0.25 },
                 {93, -0.25 },
                 {130, -0.25 },
-                {155, -0.25 },
+               
 
                 {4, 0 },
                 {5, 0 },
@@ -339,18 +356,18 @@ namespace LegendsOfCodeAndMagic
                 {129, 0.25 },
                 {145, 0.25 },
                 
-                {158, 0.25 },
+                {155, 0.25 },
                 {159, 0.25 },
 
                 {88, 0.5 },
                 {106, 0.5 },
                 {147, 0.5 },
-                
+                {158, 0.5 },
 
-               
-                
-                
-                
+
+
+
+
 
                 {85, 0.75 },
                 {115, 0.75 },
