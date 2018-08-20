@@ -281,7 +281,7 @@ namespace LegendsOfCodeAndMagic
             return new Dictionary<int, double>()
             {
                 {57, -5 },
-                {4, -5 },
+               
                 {140, -5 },
                 {138, -5 },
                 {143, -5 },
@@ -312,7 +312,7 @@ namespace LegendsOfCodeAndMagic
                 {130, -0.25 },
                 {155, -0.25 },
 
-                
+                {4, 0 },
                 {5, 0 },
                 {11, 0 },
                 {36, 0 },
