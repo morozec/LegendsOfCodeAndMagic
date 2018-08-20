@@ -788,9 +788,15 @@ namespace LegendsOfCodeAndMagic
                     if (at.OppCreature == null) continue;//проатакуем героя в конце
 
                     var targetId = at.OppCreature.InstanceId;
-                    foreach (var myCreature in at.MyCards)
+                    foreach (var myCreature in at.MyCards.Where(c => c.IsCreature))
                     {
+                        UpdateCreatureWithCreature(myCreature, at.OppCreature);
+                        UpdateCreatureWithCreature(at.OppCreature, myCreature);
+                        if (myCreature.Defense <= 0) allCards.Remove(myCreature);
+                        if (at.OppCreature.Defense <= 0) allCards.Remove(at.OppCreature);
+
                         resultStr += $"ATTACK {myCreature.InstanceId} {targetId};";
+
                     }
                 }
 
@@ -802,6 +808,7 @@ namespace LegendsOfCodeAndMagic
                     {
                         manaLeft -= creature.Cost;
                         summonningCreatures.Add(allCardsCreature);
+                        allCardsCreature.Location = 1;
                         resultStr += $"SUMMON {allCardsCreature.InstanceId};";
                     }
                 }
@@ -1681,21 +1688,91 @@ namespace LegendsOfCodeAndMagic
         {
             var itemTargets = new Dictionary<Card, int>();
 
-            var oppWardCreatures = allCreatures.Where(c => c.Location == -1 && c.IsWard)
+            var oppCreatures = allCreatures.Where(c => c.Location == -1)
                 .OrderByDescending(c => c.Attack + c.Defense).ToList();
-            if (!oppWardCreatures.Any()) return itemTargets;
+            if (!oppCreatures.Any()) return itemTargets;
 
-            var maxItems = GetMaxCards(items, new List<Card>(), manaLeft, int.MaxValue);
-            foreach (var item in maxItems)
+            var maxItems = GetMaxCards(items, new List<Card>(), manaLeft, int.MaxValue).OrderByDescending(i => i.Defense).ToList();
+
+            foreach (var creature in oppCreatures)
             {
-                if (item.Attack > 0 || !item.IsWard) continue;
-                var oppWardCreature = oppWardCreatures.FirstOrDefault();
-                if (oppWardCreature != null)
+                if (creature.IsWard)
                 {
-                    itemTargets.Add(item, oppWardCreature.InstanceId);
-                    oppWardCreatures.Remove(oppWardCreature);
+                    foreach (var item in maxItems.Where(x => !itemTargets.ContainsKey(x)))
+                    {
+                        if (item.Defense == 0 && item.IsWard || item.Defense >= -2)
+                        {
+                            itemTargets.Add(item, creature.InstanceId);
+                            break;
+                        }
+
+                        if (item.CardNumber == 151)
+                        {
+                            double value = creature.Attack + creature.Defense;
+                            if (creature.IsWard) value *= 2;
+                            if (creature.IsLethal) value *= 1.5;
+                            if (value >= 10)
+                            {
+                                itemTargets.Add(item, creature.InstanceId);
+                                break;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    var defence = creature.Defense;
+                    var killingItems = new List<Card>();
+                    foreach (var rbItem in maxItems.Where(x => !itemTargets.ContainsKey(x)))
+                    {
+                        if (rbItem.Defense >= 0) continue;//карта без урона
+
+                        if (rbItem.CardNumber == 151) //убивающая всех карта
+                        {
+                            double value = creature.Attack + creature.Defense;
+                            if (creature.IsWard) value *= 2;
+                            if (creature.IsLethal) value *= 1.5;
+                            if (value < 10) continue;
+                        }
+                        else if (rbItem.CardNumber == 152) //топор -7
+                        {
+                            if (creature.IsWard) continue;
+                            if (creature.Defense < 5 && creature.Attack + creature.Defense < 10) continue;
+                        }
+
+                        if (rbItem.Defense + creature.Defense <= 0)
+                        {
+                            defence = 0;
+                            killingItems = new List<Card>(){rbItem};
+                            break;
+                        }
+
+                        defence += rbItem.Defense;
+                        killingItems.Add(rbItem);
+                        if (defence <= 0) break;
+                    }
+
+                    if (defence <= 0)
+                    {
+                        foreach (var ki in killingItems)
+                        {
+                            itemTargets.Add(ki, creature.InstanceId);
+                        }
+                    }
                 }
             }
+            //foreach (var item in maxItems)
+            //{
+
+
+            //    if (item.Attack > 0 || !item.IsWard) continue;
+            //    var oppWardCreature = oppWardCreatures.FirstOrDefault();
+            //    if (oppWardCreature != null)
+            //    {
+            //        itemTargets.Add(item, oppWardCreature.InstanceId);
+            //        oppWardCreatures.Remove(oppWardCreature);
+            //    }
+            //}
 
             return itemTargets;
         }
