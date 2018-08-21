@@ -347,6 +347,7 @@ namespace LegendsOfCodeAndMagic
 
                 {21, 0.25 },
                 {38, 0.25 },
+                {41, 0.25 },
                 {70, 0.25 },
                 {81, 0.25 },
                 {94, 0.25 },
@@ -764,7 +765,15 @@ namespace LegendsOfCodeAndMagic
                                     c.Location == -1 && c.Attack >= 5 &&
                                     !bestPoisition.Any(cc => cc.InstanceId == c.InstanceId));
 
-                                if (isKillingStrong && !isBestPositionKillingStrong || GetPositionWeight(position) > GetPositionWeight(bestPoisition))
+                                var positionWeight = GetPositionWeight(position);
+                                var bestPositionWeight = GetPositionWeight(bestPoisition);
+
+                                if (isKillingStrong && !isBestPositionKillingStrong ||
+                                    positionWeight > bestPositionWeight ||
+                                    positionWeight == bestPositionWeight && bestTradeCard != null &&
+                                    (tradeCard.Key.IsRedItem || tradeCard.Key.IsBlueItem) &&
+                                    (bestTradeCard.IsRedItem || bestTradeCard.IsBlueItem) &&
+                                    tradeCard.Key.Defense >= bestTradeCard.Defense)
                                 {
                                     bestPoisition = position;
                                     bestTradeCard = tradeCard.Key;
