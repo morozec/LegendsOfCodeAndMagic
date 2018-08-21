@@ -800,7 +800,10 @@ namespace LegendsOfCodeAndMagic
                                                        positionWeight == bestPositionWeight && bestTradeCard != null &&
                                                        (tradeCard.Key.IsRedItem || tradeCard.Key.IsBlueItem) &&
                                                        (bestTradeCard.IsRedItem || bestTradeCard.IsBlueItem) &&
-                                                       tradeCard.Key.Defense >= bestTradeCard.Defense;
+                                                       tradeCard.Key.Defense >= bestTradeCard.Defense ||
+                                                       positionWeight == bestPositionWeight && bestTradeCard != null &&
+                                                        tradeCard.Key.IsGreenItem && bestTradeCard.IsGreenItem && 
+                                                       (tradeCard.Key.Attack + tradeCard.Key.Defense < bestTradeCard.Attack + bestTradeCard.Defense);
                                 if (isSameOppCreatures)
                                 {
                                     var posCount = position.Count(c => c.Location == 1);
