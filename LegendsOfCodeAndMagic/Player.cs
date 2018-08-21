@@ -191,11 +191,14 @@ namespace LegendsOfCodeAndMagic
                 var resDiff = res1Value - res2Value;
                 if (resDiff != 0) return -resDiff;
 
+                var myDeadDiff= result1.MyDeadCreatures.Sum(c => c.Attack + c.Defense) -
+                       result2.MyDeadCreatures.Sum(c => c.Attack + c.Defense);
+                if (myDeadDiff != 0) return myDeadDiff;
+
                 var mySumDamageDiff = result1.GetMySumDamage(false) - result2.GetMySumDamage(false);
                 if (mySumDamageDiff != 0) return mySumDamageDiff; //если нанесли больше урона в первом случае, 2 варант лучше (в 1 наносим лишний урон)
 
-                return result1.MyDeadCreatures.Sum(c => c.Attack + c.Defense) -
-                       result2.MyDeadCreatures.Sum(c => c.Attack + c.Defense);
+                return 0;
             }
             else//снимаем щит
             {
