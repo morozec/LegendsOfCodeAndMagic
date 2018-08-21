@@ -79,7 +79,12 @@ namespace LegendsOfCodeAndMagic
             for (int i = 0; i < MyCards.Count; ++i)
             {
                 if (considerWard && OppCreature.IsWard && i == 0) continue;
-                if (MyCards[i].IsCreature) damage += MyCards[i].Attack;
+                if (MyCards[i].IsCreature)
+                {
+                    var currDamage = MyCards[i].Attack;
+                    if (MyCards[i].IsLethal) currDamage *= 2;
+                    damage += currDamage;
+                }
                 else damage += Math.Abs(MyCards[i].Defense);
             }
 
@@ -1297,25 +1302,25 @@ namespace LegendsOfCodeAndMagic
         static TradeResult GetTargetCreatureTradeResult(Card targetCreature, IList<Card> allAtackingCreatures, IList<Card> usedCards,
            int hpLeft, bool hasWard, bool isNecessaryToKill, IList<Card> allMyTableCreatures)
         {
-            if (!hasWard)
-            {
-                if (isNecessaryToKill)
-                {
-                    //TODO: не всегда!
-                    //ищем юнита с ядом
-                    var lethalCreature = allAtackingCreatures.Where(c => c.IsLethal && c.Attack > 0 && !usedCards.Contains(c)).OrderBy(c => c.Attack + c.Defense)
-                        .FirstOrDefault();
+            //if (!hasWard)
+            //{
+            //    if (isNecessaryToKill)
+            //    {
+            //        //TODO: не всегда!
+            //        //ищем юнита с ядом
+            //        var lethalCreature = allAtackingCreatures.Where(c => c.IsLethal && c.Attack > 0 && !usedCards.Contains(c)).OrderBy(c => c.Attack + c.Defense)
+            //            .FirstOrDefault();
 
-                    if (lethalCreature != null)
-                    {
-                        var cards = new List<Card>(usedCards) {lethalCreature};
-                        return new TradeResult(cards,
-                            targetCreature,
-                            allMyTableCreatures,
-                            Int32.MaxValue);
-                    }
-                }
-            }
+            //        if (lethalCreature != null)
+            //        {
+            //            var cards = new List<Card>(usedCards) {lethalCreature};
+            //            return new TradeResult(cards,
+            //                targetCreature,
+            //                allMyTableCreatures,
+            //                Int32.MaxValue);
+            //        }
+            //    }
+            //}
 
 
             TradeResult bestTradeResult = null;
@@ -1610,18 +1615,6 @@ namespace LegendsOfCodeAndMagic
                 for (int i = 0; i < oppCreatures.Count; ++i)
                 {
                     var creature = oppCreatures[i];
-                    if (rbItem.CardNumber == 151) //убивающая всех карта
-                    {
-                        double value = creature.Attack + creature.Defense;
-                        if (creature.IsWard) value *= 2;
-                        if (creature.IsLethal) value *= 1.5;
-                        if (value < 10) continue;
-                    }
-                    else if (rbItem.CardNumber == 152) //топор -7
-                    {
-                        if (creature.IsWard) continue;
-                        if (creature.Defense < 5 && creature.Attack + creature.Defense < 10) continue;
-                    }
 
                     var newCreature = UpdateCreatureWithItem(new Card(creature), rbItem);
 
@@ -1637,6 +1630,22 @@ namespace LegendsOfCodeAndMagic
                     
                     var attackTargets = GetAttackTargets(newOppCreatures,
                         new List<Card>(allAtackingCreatures), allMyTableCreatures, oppHeroHp, myHeroHp);
+
+                    if (!attackTargets.Any(at => at.OppCreature == null && at.IsGoodTrade))
+                    {
+                        if (rbItem.CardNumber == 151) //убивающая всех карта
+                        {
+                            double value = creature.Attack + creature.Defense;
+                            if (creature.IsWard) value *= 2;
+                            if (creature.IsLethal) value *= 1.5;
+                            if (value < 10) continue;
+                        }
+                        else if (rbItem.CardNumber == 152) //топор -7
+                        {
+                            if (creature.IsWard) continue;
+                            if (creature.Defense < 5 && creature.Attack + creature.Defense < 10) continue;
+                        }
+                    }
 
                     var tr = attackTargets.SingleOrDefault(x =>
                         x.OppCreature != null && x.OppCreature.InstanceId == creature.InstanceId);
