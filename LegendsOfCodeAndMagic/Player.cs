@@ -774,12 +774,28 @@ namespace LegendsOfCodeAndMagic
                                 var positionWeight = GetPositionWeight(position);
                                 var bestPositionWeight = GetPositionWeight(bestPoisition);
 
-                                if (isKillingStrong && !isBestPositionKillingStrong ||
-                                    positionWeight > bestPositionWeight ||
-                                    positionWeight == bestPositionWeight && bestTradeCard != null &&
-                                    (tradeCard.Key.IsRedItem || tradeCard.Key.IsBlueItem) &&
-                                    (bestTradeCard.IsRedItem || bestTradeCard.IsBlueItem) &&
-                                    tradeCard.Key.Defense >= bestTradeCard.Defense)
+                                var isSameOppCreatures =
+                                    position.Where(c => c.Location == -1).All(c => bestPoisition.Contains(c)) &&
+                                    bestPoisition.Where(c => c.Location == -1).All(c => position.Contains(c));
+
+                                var isBetterPosition = isKillingStrong && !isBestPositionKillingStrong ||
+                                                       positionWeight > bestPositionWeight ||
+                                                       positionWeight == bestPositionWeight && bestTradeCard != null &&
+                                                       (tradeCard.Key.IsRedItem || tradeCard.Key.IsBlueItem) &&
+                                                       (bestTradeCard.IsRedItem || bestTradeCard.IsBlueItem) &&
+                                                       tradeCard.Key.Defense >= bestTradeCard.Defense;
+                                if (isSameOppCreatures)
+                                {
+                                    var posCount = position.Count(c => c.Location == 1);
+                                    var bestPosCount = bestPoisition.Count(c => c.Location == 1);
+                                    if (posCount > bestPosCount || posCount == bestPosCount && isBetterPosition)
+                                    {
+                                        bestPoisition = position;
+                                        bestTradeCard = tradeCard.Key;
+                                        bestTradeResults = tradeResults[tradeCard.Key];
+                                    }
+                                }
+                                else if (isBetterPosition)
                                 {
                                     bestPoisition = position;
                                     bestTradeCard = tradeCard.Key;
