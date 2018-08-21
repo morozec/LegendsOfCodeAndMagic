@@ -1596,10 +1596,14 @@ namespace LegendsOfCodeAndMagic
                     oppHeroHp,
                     myHeroHp);
 
+                var targetId = -1;
+                var chargeTr = chargeTradeResult.SingleOrDefault(x =>
+                    x.OppCreature != null && x.MyCards.Any(c => c.InstanceId == chargeCreature.InstanceId));
+                if (chargeTr != null) targetId = chargeTr.OppCreature.InstanceId;
                 //if (bestTradeResults == null || CompareTradeResultLists(chargeTradeResult, bestTradeResults, false) < 0)
                 //{
                     bestTradeResults.Add(chargeCreature, chargeTradeResult);
-                    cardToPlay.Add(chargeCreature, -1);
+                    cardToPlay.Add(chargeCreature, targetId);
                 //}
             }
 
