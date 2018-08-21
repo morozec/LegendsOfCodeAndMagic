@@ -691,6 +691,7 @@ namespace LegendsOfCodeAndMagic
                 var tradeCards = new List<Card>();
                 if (!bestTradeResults.Any(tr => tr.OppCreature == null && tr.IsGoodTrade))
                 {
+                    var killingOppCreatures = new List<Card>();
                     while (true)
                     {
                         allCreaturesCurr = allCards.Where(t => t.IsCreature).ToList();
@@ -758,7 +759,7 @@ namespace LegendsOfCodeAndMagic
                                 {
                                     var allMyExist = position.Where(c => c.Location == 1)
                                         .All(c => noItemsPosition.Any(cc => cc.InstanceId == c.InstanceId));
-                                    var allOppExist = noItemsPosition.Where(c => c.Location == -1)
+                                    var allOppExist = noItemsPosition.Where(c => c.Location == -1 && !killingOppCreatures.Contains(c))
                                         .All(c => position.Any(cc => cc.InstanceId == c.InstanceId));
                                     if (allMyExist && allOppExist) continue;
                                 }
@@ -804,6 +805,7 @@ namespace LegendsOfCodeAndMagic
                             {
                                 allCards.Remove(targetCreature);
                                 allCreaturesCurr.Remove(targetCreature);
+                                killingOppCreatures.Add(targetCreature);
                             }
 
                             allCards.Remove(bestTradeCard);
