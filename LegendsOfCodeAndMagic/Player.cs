@@ -1153,37 +1153,47 @@ namespace LegendsOfCodeAndMagic
                 }
                 else if (card.Cost + currMaxCards.Sum(c => c.Cost) == maxCards.Sum(c => c.Cost))
                 {
-                    if (tradeResults != null)
+                    if (tmpCards.Count > maxCards.Count)
                     {
-                        if (bestTradeResults == null)
+                        maxCards = tmpCards;
+                        bestTradeResults = tradeResults;
+                    }
+                    else
+                    {
+                        if (tradeResults != null)
                         {
-                            maxCards = tmpCards;
-                            bestTradeResults = tradeResults;
-                        }
-
-                        var trCompare = CompareTradeResultLists(tradeResults, bestTradeResults, false);
-
-                        if (trCompare > 0) //tradeResults хуже для врага - т.е. лучше для меня
-                        {
-                            maxCards = tmpCards;
-                            bestTradeResults = tradeResults;
-                        }
-
-                        else if (trCompare == 0)
-                        {
-                            if (card.Attack + card.Defense + currMaxCards.Sum(c => c.Attack + c.Defense) > maxCards.Sum(c => c.Attack + c.Defense))
+                            if (bestTradeResults == null)
                             {
                                 maxCards = tmpCards;
                                 bestTradeResults = tradeResults;
                             }
+
+                            var trCompare = CompareTradeResultLists(tradeResults, bestTradeResults, false);
+
+                            if (trCompare > 0) //tradeResults хуже для врага - т.е. лучше для меня
+                            {
+                                maxCards = tmpCards;
+                                bestTradeResults = tradeResults;
+                            }
+
+                            else if (trCompare == 0)
+                            {
+                                if (card.Attack + card.Defense + currMaxCards.Sum(c => c.Attack + c.Defense) >
+                                    maxCards.Sum(c => c.Attack + c.Defense))
+                                {
+                                    maxCards = tmpCards;
+                                    bestTradeResults = tradeResults;
+                                }
+                            }
                         }
-                    }
-                    else
-                    {
-                        if (card.Attack + card.Defense + currMaxCards.Sum(c => c.Attack + c.Defense) > maxCards.Sum(c => c.Attack + c.Defense))
+                        else
                         {
-                            maxCards = new List<Card>() { card };
-                            maxCards.AddRange(currMaxCards);
+                            if (card.Attack + card.Defense + currMaxCards.Sum(c => c.Attack + c.Defense) >
+                                maxCards.Sum(c => c.Attack + c.Defense))
+                            {
+                                maxCards = new List<Card>() {card};
+                                maxCards.AddRange(currMaxCards);
+                            }
                         }
                     }
                 }
