@@ -177,7 +177,9 @@ namespace LegendsOfCodeAndMagic
             if (result1.IsKilling) //isKilling2 тоже true
             {
                 var res1Value = result1.OppCreature.Attack + result1.OppCreature.Defense;
+                if (result1.OppCreature.IsLethal) res1Value *= 2;
                 var res2Value = result2.OppCreature.Attack + result2.OppCreature.Defense;
+                if (result2.OppCreature.IsLethal) res2Value *= 2;
                 var resDiff = res1Value - res2Value;
                 if (resDiff != 0) return -resDiff;
 
@@ -350,6 +352,7 @@ namespace LegendsOfCodeAndMagic
                 {41, 0.25 },
                 {70, 0.25 },
                 {81, 0.25 },
+                {90, 0.25 },
                 {94, 0.25 },
                 {111, 0.25 },
                 {119, 0.25 },
@@ -391,7 +394,9 @@ namespace LegendsOfCodeAndMagic
                 {87, 1.5 },
                 
                 
+                {7, 2 },
                 {44, 2 },
+                {67, 2 },
                 {133, 2 },
 
                 {151, 5 },
