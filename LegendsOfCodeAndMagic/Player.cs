@@ -123,6 +123,7 @@ namespace LegendsOfCodeAndMagic
                     }
                     else //обычный размен
                     {
+                        //TODO: отдаем под щит любого
                         if (!OppCreature.IsWard)
                             isGoodTrade = OppCreature.Attack + OppCreature.Defense >= MyDeadCreatures.Sum(c => c.Attack + c.Defense);
                         else
@@ -379,6 +380,7 @@ namespace LegendsOfCodeAndMagic
 
 
 
+                {54, 0.75 },
                 {85, 0.75 },
                 {115, 0.75 },
                 {144, 0.75 },
@@ -386,6 +388,7 @@ namespace LegendsOfCodeAndMagic
                 {150, 0.75 },
                 {148, 0.751 },
 
+                {50, 1 },
                 {52, 1 },
                 {64, 1 },
                 {135, 1 },
@@ -681,7 +684,7 @@ namespace LegendsOfCodeAndMagic
 
                 var allCreaturesCurr = allCards.Where(t => t.IsCreature).ToList();
                 var allAtackingCreaturesCurr = GetAllAttackingCreatures(allCreaturesCurr, new List<Card>());
-                var allTableCreaturesCurr = GetAllTableCreatures(allCreaturesCurr, new List<Card>());
+                var allTableCreaturesCurr = GetAllTableCreatures(allCreaturesCurr, manaLeft, myPlayerData.PlayerHealth, oppPlayerData.PlayerHealth);
                 var noItemTradeResults = GetAttackTargets(allCreaturesCurr.Where(c => c.Location == -1).ToList(),
                     allAtackingCreaturesCurr,
                     allTableCreaturesCurr,
@@ -1258,14 +1261,25 @@ namespace LegendsOfCodeAndMagic
             return attackingCards;
         }
 
-        static IList<Card> GetAllTableCreatures(IList<Card> allCreatures, IList<Card> summonningCards)
+        static IList<Card> GetAllTableCreatures(IList<Card> allCreatures, int manaLeft, int myPlayerHp, int oppPlayerHp)
         {
+
             var tableCreatures = new List<Card>();
             foreach (var card in allCreatures.Where(c => c.Location == 1))
             {
                 tableCreatures.Add(card);
             }
-            foreach (var card in summonningCards)
+
+            var myCreaturesOnBoardCount = allCreatures.Count(c => c.Location == 1);
+            var summonningCreatures = GetSummonningCreatures(
+                allCreatures.Where(c => c.Location == 0).ToList(),
+                manaLeft,
+                BOARD_SIZE - myCreaturesOnBoardCount,
+                allCreatures.Where(c => c.Location == -1).ToList(),
+                myPlayerHp,
+                oppPlayerHp);
+
+            foreach (var card in summonningCreatures)
             {
                 tableCreatures.Add(card);
             }
@@ -1567,7 +1581,10 @@ namespace LegendsOfCodeAndMagic
 
                 var summoningCreatures = new List<Card> {chargeCreature};
                 var chargeAllAtackingCreatures = GetAllAttackingCreatures(allCreatures, summoningCreatures);
-                var chargeAllMyTableCreatures = GetAllTableCreatures(allCreatures, summoningCreatures);
+                var chargeAllMyTableCreatures = GetAllTableCreatures(new List<Card>(allCreatures) {chargeCreature},
+                    manaLeft - chargeCreature.Cost,
+                    myHeroHp,
+                    oppHeroHp);
                 var chargeTradeResult = GetAttackTargets(oppCreatures,
                     chargeAllAtackingCreatures,
                     chargeAllMyTableCreatures,
@@ -1582,7 +1599,7 @@ namespace LegendsOfCodeAndMagic
             }
 
             var allAtackingCreatures = GetAllAttackingCreatures(allCreatures, new List<Card>());
-            var allMyTableCreatures = GetAllTableCreatures(allCreatures, new List<Card>());
+            var allMyTableCreatures = GetAllTableCreatures(allCreatures, manaLeft, myHeroHp, oppHeroHp);
 
             foreach (var rbItem in redAndBlueItems)
             {
