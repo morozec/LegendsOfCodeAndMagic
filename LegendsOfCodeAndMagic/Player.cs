@@ -128,24 +128,26 @@ namespace LegendsOfCodeAndMagic
                     }
                     else //обычный размен
                     {
-                        //TODO: отдаем под щит любого
-                        if (!OppCreature.IsWard)
-                            isGoodTrade = OppCreature.Attack + OppCreature.Defense >= MyDeadCreatures.Sum(c => c.Attack + c.Defense);
-                        else
-                        {
-                            if (!MyCards.Any()) isGoodTrade = true;
-                            else
-                            {
-                                if (!MyCards[0].IsCreature)
-                                {
-                                    isGoodTrade = OppCreature.Attack + OppCreature.Defense >= MyDeadCreatures.Sum(c => c.Attack + c.Defense);
-                                }
-                                else
-                                {
-                                    isGoodTrade = OppCreature.Attack + OppCreature.Defense >= MyDeadCreatures.Where(c => !Equals(c, MyCards[0])).Sum(c => c.Attack + c.Defense);
-                                }
-                            }
-                        }
+                        isGoodTrade = OppCreature.Attack + OppCreature.Defense >= MyDeadCreatures.Sum(c => c.Attack + c.Defense);
+
+                        ////TODO: отдаем под щит любого
+                        //if (!OppCreature.IsWard)
+                        //    isGoodTrade = OppCreature.Attack + OppCreature.Defense >= MyDeadCreatures.Sum(c => c.Attack + c.Defense);
+                        //else
+                        //{
+                        //    if (!MyCards.Any()) isGoodTrade = true;
+                        //    else
+                        //    {
+                        //        if (!MyCards[0].IsCreature)
+                        //        {
+                        //            isGoodTrade = OppCreature.Attack + OppCreature.Defense >= MyDeadCreatures.Sum(c => c.Attack + c.Defense);
+                        //        }
+                        //        else
+                        //        {
+                        //            isGoodTrade = OppCreature.Attack + OppCreature.Defense >= MyDeadCreatures.Where(c => !Equals(c, MyCards[0])).Sum(c => c.Attack + c.Defense);
+                        //        }
+                        //    }
+                        //}
                             
                     }
                 }
@@ -320,7 +322,7 @@ namespace LegendsOfCodeAndMagic
                 {20, -0.5 },
                 {24, -0.5 },
                 {47, -0.5 },
-                {83, -0.5 },
+               
                 {100, -0.5 },
                 {131, -0.5 },
                 {149, -0.5 },
@@ -342,6 +344,7 @@ namespace LegendsOfCodeAndMagic
                 {11, 0 },
                 {36, 0 },
                 {61, 0 },
+                {70, 0 },
                 {71, 0 },
                 {90, 0 },
                 {112, 0 },
@@ -352,12 +355,12 @@ namespace LegendsOfCodeAndMagic
                 {136, 0 },
 
                 {34, 0.01 },
+                {83, 0.01 },
                 {104, 0.01 },
 
                 {21, 0.25 },
                 {38, 0.25 },
                 {41, 0.25 },
-                {70, 0.25 },
                 {81, 0.25 },
                
                 {94, 0.25 },
