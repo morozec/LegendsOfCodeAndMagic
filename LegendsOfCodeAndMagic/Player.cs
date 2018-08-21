@@ -334,9 +334,10 @@ namespace LegendsOfCodeAndMagic
                 {11, 0 },
                 {36, 0 },
                 {61, 0 },
-                {81, 0 },
+                
                 {112, 0 },
                 {118, 0 },
+                {125, 0 },
                 {128, 0 },
                 
                 {136, 0 },
@@ -347,7 +348,7 @@ namespace LegendsOfCodeAndMagic
                 {21, 0.25 },
                 {38, 0.25 },
                 {70, 0.25 },
-               
+                {81, 0.25 },
                 {94, 0.25 },
                 {111, 0.25 },
                 {119, 0.25 },
@@ -361,6 +362,7 @@ namespace LegendsOfCodeAndMagic
 
                 {88, 0.5 },
                 {106, 0.5 },
+                {141, 0.5 },
                 {147, 0.5 },
                 {158, 0.5 },
 
@@ -755,7 +757,14 @@ namespace LegendsOfCodeAndMagic
                                     if (allMyExist && allOppExist) continue;
                                 }
 
-                                if (GetPositionWeight(position) > GetPositionWeight(bestPoisition))
+                                var isKillingStrong = bestPoisition.Any(c =>
+                                    c.Location == -1 && c.Attack >= 5 &&
+                                    !position.Any(cc => cc.InstanceId == c.InstanceId));
+                                var isBestPositionKillingStrong = position.Any(c =>
+                                    c.Location == -1 && c.Attack >= 5 &&
+                                    !bestPoisition.Any(cc => cc.InstanceId == c.InstanceId));
+
+                                if (isKillingStrong && !isBestPositionKillingStrong || GetPositionWeight(position) > GetPositionWeight(bestPoisition))
                                 {
                                     bestPoisition = position;
                                     bestTradeCard = tradeCard.Key;
