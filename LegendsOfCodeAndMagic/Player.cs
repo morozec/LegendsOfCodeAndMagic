@@ -115,10 +115,10 @@ namespace LegendsOfCodeAndMagic
                     {
                         isGoodTrade = true;
                     }
-                    else if (MyCards.Count == 1 && MyCards[0].IsCreature && MyCards[0].IsLethal && MyCards[0].Attack > 0)//убиваем врага одним летальщиком
-                    {
-                        isGoodTrade = true;
-                    }
+                    //else if (MyCards.Count == 1 && MyCards[0].IsCreature && MyCards[0].IsLethal && MyCards[0].Attack > 0)//убиваем врага одним летальщиком
+                    //{
+                    //    isGoodTrade = true;
+                    //}
                     else if (OppCreature.IsLethal && OppCreature.Attack > 0)//убиваем летальщика врага
                     {
                         isGoodTrade = MyDeadCreatures.Sum(c => c.Attack) <= 3 ||
@@ -337,11 +337,12 @@ namespace LegendsOfCodeAndMagic
                 {39, -0.25 },
                 {56, -0.25 },
                 {72, -0.25 },
-                {86, -0.25 },
+               
                 {91, -0.25 },
                 {93, -0.25 },
                 {130, -0.25 },
-               
+
+                {27,-0.01 },
 
                 {4, 0 },
                 
@@ -350,6 +351,7 @@ namespace LegendsOfCodeAndMagic
                 {61, 0 },
                 {70, 0 },
                 {71, 0 },
+                {86, 0 },
                 {90, 0 },
                 {112, 0 },
                 {118, 0 },
