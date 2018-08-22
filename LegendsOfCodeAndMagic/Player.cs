@@ -800,41 +800,13 @@ namespace LegendsOfCodeAndMagic
                                     if (allMyExist && allOppExist) continue;
                                 }
 
-                                var isKillingStrong = bestPoisition.Any(c =>
-                                    c.Location == -1 && c.Attack >= 5 &&
-                                    !position.Any(cc => cc.InstanceId == c.InstanceId));
-                                var isBestPositionKillingStrong = position.Any(c =>
-                                    c.Location == -1 && c.Attack >= 5 &&
-                                    !bestPoisition.Any(cc => cc.InstanceId == c.InstanceId));
 
-                                var positionWeight = GetPositionWeight(position);
-                                var bestPositionWeight = GetPositionWeight(bestPoisition);
 
-                                var isSameOppCreatures =
-                                    position.Where(c => c.Location == -1).All(c => bestPoisition.Contains(c)) &&
-                                    bestPoisition.Where(c => c.Location == -1).All(c => position.Contains(c));
-
-                                var isBetterPosition = isKillingStrong && !isBestPositionKillingStrong ||
-                                                       positionWeight > bestPositionWeight ||
-                                                       positionWeight == bestPositionWeight && bestTradeCard != null &&
-                                                       (tradeCard.Key.IsRedItem || tradeCard.Key.IsBlueItem) &&
-                                                       (bestTradeCard.IsRedItem || bestTradeCard.IsBlueItem) &&
-                                                       tradeCard.Key.Defense >= bestTradeCard.Defense ||
-                                                       positionWeight == bestPositionWeight && bestTradeCard != null &&
-                                                        tradeCard.Key.IsGreenItem && bestTradeCard.IsGreenItem && 
-                                                       (tradeCard.Key.Attack + tradeCard.Key.Defense < bestTradeCard.Attack + bestTradeCard.Defense);
-                                if (isSameOppCreatures)
-                                {
-                                    var posCount = position.Count(c => c.Location == 1);
-                                    var bestPosCount = bestPoisition.Count(c => c.Location == 1);
-                                    if (posCount > bestPosCount || posCount == bestPosCount && isBetterPosition)
-                                    {
-                                        bestPoisition = position;
-                                        bestTradeCard = tradeCard.Key;
-                                        bestTradeResults = tradeResults[tradeCard.Key];
-                                    }
-                                }
-                                else if (isBetterPosition)
+                                var isBetterPosition = ComparePositions(position,
+                                    bestPoisition,
+                                    tradeCard.Key,
+                                    bestTradeCard) < 0;
+                                if (isBetterPosition)
                                 {
                                     bestPoisition = position;
                                     bestTradeCard = tradeCard.Key;
@@ -1018,10 +990,60 @@ namespace LegendsOfCodeAndMagic
             return myCreaturesWeight - oppCreaturesWeight;
         }
 
-        static int ComparePositions(IList<Card> position1, IList<Card> position2)
+        static int ComparePositions(IList<Card> position, IList<Card> bestPoisition, Card tradeCard, Card bestTradeCard)
         {
-            var deltaWeight = GetPositionWeight(position1) - GetPositionWeight(position2);
-            return -deltaWeight;
+            var isKillingStrong = bestPoisition.Any(c =>
+                                    c.Location == -1 && c.Attack >= 5 &&
+                                    !position.Any(cc => cc.InstanceId == c.InstanceId));
+            var isBestPositionKillingStrong = position.Any(c =>
+                c.Location == -1 && c.Attack >= 5 &&
+                !bestPoisition.Any(cc => cc.InstanceId == c.InstanceId));
+
+            var positionWeight = GetPositionWeight(position);
+            var bestPositionWeight = GetPositionWeight(bestPoisition);
+
+            var isSameOppCreatures =
+                position.Where(c => c.Location == -1).All(c => bestPoisition.Any(cc => cc.InstanceId == c.InstanceId)) &&
+                bestPoisition.Where(c => c.Location == -1).All(c => position.Any(cc => cc.InstanceId == c.InstanceId));
+
+            var isSameMyCreatures =
+                position.Where(c => c.Location == 1).All(c => bestPoisition.Any(cc => cc.InstanceId == c.InstanceId)) &&
+                bestPoisition.Where(c => c.Location == 1).All(c => position.Any(cc => cc.InstanceId == c.InstanceId));
+
+            var isBetterPosition = isKillingStrong && !isBestPositionKillingStrong ||
+                                   positionWeight > bestPositionWeight ||
+                                   positionWeight == bestPositionWeight && bestTradeCard != null &&
+                                   (tradeCard.IsRedItem || tradeCard.IsBlueItem) &&
+                                   (bestTradeCard.IsRedItem || bestTradeCard.IsBlueItem) &&
+                                   tradeCard.Defense >= bestTradeCard.Defense ||
+                                   isSameOppCreatures && isSameMyCreatures && bestTradeCard != null &&
+                                    tradeCard.IsGreenItem && bestTradeCard.IsGreenItem &&
+                                   (tradeCard.Attack + tradeCard.Defense < bestTradeCard.Attack + bestTradeCard.Defense);
+            if (isSameOppCreatures)
+            {
+                var posCount = position.Count(c => c.Location == 1);
+                var bestPosCount = bestPoisition.Count(c => c.Location == 1);
+                if (posCount > bestPosCount || posCount == bestPosCount && isBetterPosition)
+                {
+                    return -1;
+                }
+            }
+            else
+            {
+                if (isSameMyCreatures)
+                {
+                    var posCount = position.Count(c => c.Location == -1);
+                    var bestPosCount = bestPoisition.Count(c => c.Location == -1);
+                    if (posCount < bestPosCount || posCount == bestPosCount && isBetterPosition)
+                    {
+                        return -1;
+                    }
+                }
+                else if (isBetterPosition) return -1;
+            }
+
+            return 1;
+
         }
 
         static int CompareTradeResultLists(IList<TradeResult> tradeResults1, IList<TradeResult> tradeResults2, bool isNoItemsComparing)
