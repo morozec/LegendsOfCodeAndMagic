@@ -153,7 +153,14 @@ namespace LegendsOfCodeAndMagic
                 }
                 else
                 {
-                    isGoodTrade = MyCards.Where(c => c.IsCreature).Sum(c => c.Attack) >= OppPlayerHp;//TODO: учет синих айтемов
+                    var damage = 0;
+                    foreach (var card in MyCards)
+                    {
+                        if (card.IsCreature) damage += card.Attack;
+                        else if (card.IsBlueItem) damage += Math.Abs(card.Defense);
+                        else throw new Exception("Unknown card type");
+                    }
+                    isGoodTrade = damage >= OppPlayerHp;
                 }
 
                 return isGoodTrade;
