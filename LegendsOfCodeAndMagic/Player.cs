@@ -1472,13 +1472,49 @@ namespace LegendsOfCodeAndMagic
                 return attackTargets;
             }
 
-            //идем в размен
+            var bestStepAttackingCreatures = new List<Card>(allAttackingCreatures);
+            var bestStepTradeResults =
+                GetBestStepTradeResults(oppCreatures, myHeroHp, bestStepAttackingCreatures, allMyTableCreatures);
+
+            var orderedOppentsAttackingCreatures = new List<Card>(allAttackingCreatures);
+            var orderedOpponentsTradeResult =
+                GetOrderedOpponentsTradeResult(oppCreatures, myHeroHp, orderedOppentsAttackingCreatures, allMyTableCreatures);
+
+            IList<TradeResult> finalTradeResults;
+            if (CompareTradeResultLists(bestStepTradeResults, orderedOpponentsTradeResult, false) <= 0)
+            {
+                finalTradeResults = bestStepTradeResults;
+                allAttackingCreatures = bestStepAttackingCreatures;
+            }
+            else
+            {
+                finalTradeResults = orderedOpponentsTradeResult;
+                allAttackingCreatures = orderedOppentsAttackingCreatures;
+            }
+
+            foreach (var tr in finalTradeResults)
+            {
+                attackTargets.Add(tr);
+            }
+
+            if (allAttackingCreatures.Any())
+            {
+                var attackHeroTradeResult =
+                    new TradeResult(allAttackingCreatures, null, allMyTableCreatures, oppHeroHp); 
+                attackTargets.Add(attackHeroTradeResult);
+            }
+
+            return attackTargets;
+        }
+
+
+        private static IList<TradeResult> GetBestStepTradeResults(
+            IList<Card> oppCreatures, int myHeroHp, IList<Card> allAttackingCreatures, IList<Card> allMyTableCreatures)
+        {
+            var attackTargets = new List<TradeResult>();
+
             var leftCreatures = oppCreatures
                 .Where(c => !c.IsGuard).ToList();
-
-            //var orderedOppCreatures = leftCreatures.Where(c => c.IsLethal).OrderByDescending(c => c.Defense + c.Attack)
-            //    .ToList();//сначала убиваем летальщиков
-            //orderedOppCreatures.AddRange(leftCreatures.Where(c => !c.IsLethal).OrderByDescending(c => c.Defense + c.Attack));
 
             var isNecessaryToKill =
                 IsKillingOppHero(myHeroHp, oppCreatures.Where(c => !c.IsGuard).ToList(), false);
@@ -1519,11 +1555,43 @@ namespace LegendsOfCodeAndMagic
                 else break;
             }
 
-            if (allAttackingCreatures.Any())
+            return attackTargets;
+        }
+
+        private static IList<TradeResult> GetOrderedOpponentsTradeResult(
+            IList<Card> oppCreatures, int myHeroHp, IList<Card> allAttackingCreatures, IList<Card> allMyTableCreatures)
+        {
+            var attackTargets = new List<TradeResult>();
+
+            var leftCreatures = oppCreatures
+                .Where(c => !c.IsGuard).ToList();
+
+            var orderedOppCreatures = leftCreatures.Where(c => c.IsLethal).OrderByDescending(c => c.Defense + c.Attack)
+                .ToList();//сначала убиваем летальщиков
+            orderedOppCreatures.AddRange(leftCreatures.Where(c => !c.IsLethal).OrderByDescending(c => c.Defense + c.Attack));
+
+            var isNecessaryToKill =
+                IsKillingOppHero(myHeroHp, oppCreatures.Where(c => !c.IsGuard).ToList(), false);
+
+            foreach (var creature in orderedOppCreatures)
             {
-                var attackHeroTradeResult =
-                    new TradeResult(allAttackingCreatures, null, allMyTableCreatures, oppHeroHp); 
-                attackTargets.Add(attackHeroTradeResult);
+                var currAttackingCreatures = GetTargetCreatureTradeResult(creature,
+                    allAttackingCreatures,
+                    new List<Card>(),
+                    creature.Defense,
+                    creature.IsWard,
+                    isNecessaryToKill,
+                    allMyTableCreatures);
+
+                if (currAttackingCreatures == null) continue;
+                if (!currAttackingCreatures.IsGoodTrade && !isNecessaryToKill) continue;
+
+                attackTargets.Add(currAttackingCreatures);
+
+                foreach (var ac in currAttackingCreatures.MyCards)
+                {
+                    allAttackingCreatures.Remove(ac);
+                }
             }
 
             return attackTargets;
@@ -1656,12 +1724,12 @@ namespace LegendsOfCodeAndMagic
                             double value = creature.Attack + creature.Defense;
                             if (creature.IsWard) value *= 2;
                             if (creature.IsLethal) value *= 1.5;
-                            if (value < 10) continue;
+                            if (value < 9) continue;
                         }
                         else if (rbItem.CardNumber == 152) //топор -7
                         {
                             if (creature.IsWard) continue;
-                            if (creature.Defense < 5 && creature.Attack + creature.Defense < 10) continue;
+                            if (creature.Defense < 5 && creature.Attack + creature.Defense < 9) continue;
                         }
                     }
 
@@ -1848,12 +1916,12 @@ namespace LegendsOfCodeAndMagic
                             double value = creature.Attack + creature.Defense;
                             if (creature.IsWard) value *= 2;
                             if (creature.IsLethal) value *= 1.5;
-                            if (value < 10) continue;
+                            if (value < 9) continue;
                         }
                         else if (rbItem.CardNumber == 152) //топор -7
                         {
                             if (creature.IsWard) continue;
-                            if (creature.Defense < 5 && creature.Attack + creature.Defense < 10) continue;
+                            if (creature.Defense < 5 && creature.Attack + creature.Defense < 9) continue;
                         }
 
                         if (rbItem.Defense + creature.Defense <= 0)
