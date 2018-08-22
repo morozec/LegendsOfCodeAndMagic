@@ -403,6 +403,7 @@ namespace LegendsOfCodeAndMagic
 
 
                 {95, 0.501 },
+                {103, 0.502 },
 
 
                 {54, 0.75 },
