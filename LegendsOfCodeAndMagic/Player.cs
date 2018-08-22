@@ -384,6 +384,9 @@ namespace LegendsOfCodeAndMagic
                 {155, 0.25 },
                 {159, 0.25 },
 
+
+                
+
                 {88, 0.5 },
                 {135, 0.5 },
                 {141, 0.5 },
@@ -392,7 +395,7 @@ namespace LegendsOfCodeAndMagic
 
 
 
-
+                {95, 0.501 },
 
 
                 {54, 0.75 },
