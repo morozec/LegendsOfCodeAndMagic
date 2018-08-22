@@ -1007,8 +1007,8 @@ namespace LegendsOfCodeAndMagic
                 bestPoisition.Where(c => c.Location == -1).All(c => position.Any(cc => cc.InstanceId == c.InstanceId));
 
             var isSameMyCreatures =
-                position.Where(c => c.Location == 1).All(c => bestPoisition.Any(cc => cc.InstanceId == c.InstanceId)) &&
-                bestPoisition.Where(c => c.Location == 1).All(c => position.Any(cc => cc.InstanceId == c.InstanceId));
+                position.Where(c => c.Location == 1).All(c => bestPoisition.Any(cc => cc.InstanceId == c.InstanceId && cc.Location == 1)) &&
+                bestPoisition.Where(c => c.Location == 1).All(c => position.Any(cc => cc.InstanceId == c.InstanceId && cc.Location == 1));
 
             var isBetterPosition = isKillingStrong && !isBestPositionKillingStrong ||
                                    positionWeight > bestPositionWeight ||
