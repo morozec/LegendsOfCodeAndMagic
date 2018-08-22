@@ -705,7 +705,9 @@ namespace LegendsOfCodeAndMagic
                     allAtackingCreaturesCurr,
                     allTableCreaturesCurr,
                     oppPlayerData.PlayerHealth,
-                    myPlayerData.PlayerHealth);
+                    myPlayerData.PlayerHealth,
+                    allCards.Where(c => c.IsBlueItem).ToList(),
+                    manaLeft);
                 var noItemsPosition = GetPosition(allCreaturesCurr, noItemTradeResults, manaLeft,
                     oppPlayerData.PlayerHealth, myPlayerData.PlayerHealth);
                 var bestPoisition = noItemsPosition;
@@ -973,9 +975,12 @@ namespace LegendsOfCodeAndMagic
                
                 if (heroAttackTradeResult != null)
                 {
-                    foreach (var creature in heroAttackTradeResult.MyCards.Where(c => c.IsCreature))
+                    foreach (var card in heroAttackTradeResult.MyCards)
                     {
-                        resultStr += $"ATTACK {creature.InstanceId} -1;";
+                        if (card.IsCreature)
+                            resultStr += $"ATTACK {card.InstanceId} -1;";
+                        else
+                            resultStr += $"USE {card.InstanceId} -1;";
                     }
                 }
 
@@ -1200,8 +1205,8 @@ namespace LegendsOfCodeAndMagic
                 IList<TradeResult> tradeResults = null;
                 if (oppTableCreatures != null)
                 {
-                    tradeResults = GetAttackTargets(tmpCards, new List<Card>(oppTableCreatures), oppTableCreatures, oppHeroHp,
-                        myHeroHp);
+                    tradeResults = GetAttackTargets(tmpCards, new List<Card>(oppTableCreatures), oppTableCreatures,myHeroHp, oppHeroHp,
+                        new List<Card>(), 0);
                 }
 
                 if (card.Cost == 0 || card.Cost + currMaxCards.Sum(c => c.Cost) > maxCards.Sum(c => c.Cost))
@@ -1405,16 +1410,34 @@ namespace LegendsOfCodeAndMagic
        
 
 
-        static bool IsKillingOppHero(int oppHeroHp, IList<Card> attackingCreatures, bool isOppHero)
+        static IList<Card> IsKillingOppHero(int oppHeroHp, IList<Card> attackingCreatures, bool isOppHero, IList<Card> blueCards, int manaLeft)
         {
+            var res = new List<Card>();
             //TODO: BreakThroug
             var damage = attackingCreatures.Sum(c => c.Attack);
-            if (isOppHero) damage += attackingCreatures.Where(c => c.Location == 0).Sum(c => -c.OpponentHealthChange);
-            return damage >= oppHeroHp;
+            IList<Card> maxBlueCards = new List<Card>();
+            if (isOppHero)
+            {
+                damage += attackingCreatures.Where(c => c.Location == 0).Sum(c => -c.OpponentHealthChange);
+                maxBlueCards = GetMaxCards(blueCards, new List<Card>(), manaLeft, int.MaxValue);
+                foreach (var bc in maxBlueCards)
+                {
+                    damage += Math.Abs(bc.Defense);
+                }
+            }
+
+            var isKilled = damage >= oppHeroHp;
+            if (isKilled)
+            {
+                res.AddRange(attackingCreatures);
+                res.AddRange(maxBlueCards);
+            }
+
+            return res;
         }
 
         static IList<TradeResult> GetAttackTargets(IList<Card> oppCreatures, IList<Card> allAttackingCreatures, IList<Card> allMyTableCreatures,
-            int oppHeroHp, int myHeroHp)
+            int oppHeroHp, int myHeroHp, IList<Card> blueCards, int manaLeft)
         {
             var attackTargets = new List<TradeResult>();
 
@@ -1464,9 +1487,10 @@ namespace LegendsOfCodeAndMagic
                 return attackTargets;
             }
 
-            if (IsKillingOppHero(oppHeroHp, allAttackingCreatures, true))
+            var killingCards = IsKillingOppHero(oppHeroHp, allAttackingCreatures, true, blueCards, manaLeft);
+            if (killingCards.Any())
             {
-                var killHeroTradeResult = new TradeResult(allAttackingCreatures, null, allMyTableCreatures, oppHeroHp);
+                var killHeroTradeResult = new TradeResult(killingCards, null, allMyTableCreatures, oppHeroHp);
                 attackTargets.Add(killHeroTradeResult);
 
                 return attackTargets;
@@ -1517,7 +1541,7 @@ namespace LegendsOfCodeAndMagic
                 .Where(c => !c.IsGuard).ToList();
 
             var isNecessaryToKill =
-                IsKillingOppHero(myHeroHp, oppCreatures.Where(c => !c.IsGuard).ToList(), false);
+                IsKillingOppHero(myHeroHp, oppCreatures.Where(c => !c.IsGuard).ToList(), false, new List<Card>(), 0).Any();
 
             while (allAttackingCreatures.Any())
             {
@@ -1571,7 +1595,7 @@ namespace LegendsOfCodeAndMagic
             orderedOppCreatures.AddRange(leftCreatures.Where(c => !c.IsLethal).OrderByDescending(c => c.Defense + c.Attack));
 
             var isNecessaryToKill =
-                IsKillingOppHero(myHeroHp, oppCreatures.Where(c => !c.IsGuard).ToList(), false);
+                IsKillingOppHero(myHeroHp, oppCreatures.Where(c => !c.IsGuard).ToList(), false, new List<Card>(), 0).Any();
 
             foreach (var creature in orderedOppCreatures)
             {
@@ -1662,6 +1686,8 @@ namespace LegendsOfCodeAndMagic
 
             bestTradeResults = new Dictionary<Card, IList<TradeResult>>();
             var cardToPlay = new Dictionary<Card, int>();
+            var blueItems = redAndBlueItems.Where(i => i.IsBlueItem).ToList();
+
             foreach (var chargeCreature in chargeSummonnigCreatures)
             {
                 if (chargeCreature.Cost > manaLeft) continue;
@@ -1676,7 +1702,9 @@ namespace LegendsOfCodeAndMagic
                     chargeAllAtackingCreatures,
                     chargeAllMyTableCreatures,
                     oppHeroHp,
-                    myHeroHp);
+                    myHeroHp,
+                    blueItems,
+                    manaLeft - chargeCreature.Cost);
 
                 var targetId = -1;
                 var chargeTr = chargeTradeResult.SingleOrDefault(x =>
@@ -1715,7 +1743,8 @@ namespace LegendsOfCodeAndMagic
                     }
                     
                     var attackTargets = GetAttackTargets(newOppCreatures,
-                        new List<Card>(allAtackingCreatures), allMyTableCreatures, oppHeroHp, myHeroHp);
+                        new List<Card>(allAtackingCreatures), allMyTableCreatures, oppHeroHp, myHeroHp,
+                        blueItems, manaLeft - rbItem.Cost);
 
                     if (!attackTargets.Any(at => at.OppCreature == null && at.IsGoodTrade))
                     {
@@ -1768,7 +1797,7 @@ namespace LegendsOfCodeAndMagic
                     allAtackingCreatures[i] = newCreature;
 
                     var attackTargets = GetAttackTargets(allCreatures.Where(c => c.Location == -1).ToList(),
-                        new List<Card>(allAtackingCreatures), allMyTableCreatures, oppHeroHp, myHeroHp);
+                        new List<Card>(allAtackingCreatures), allMyTableCreatures, oppHeroHp, myHeroHp, blueItems, manaLeft - greenItem.Cost);
                     if (currBestResults == null || CompareTradeResultLists(attackTargets, currBestResults, false) < 0)
                     {
                         currBestResults = attackTargets;
