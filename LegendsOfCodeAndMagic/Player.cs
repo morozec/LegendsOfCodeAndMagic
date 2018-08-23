@@ -1793,6 +1793,10 @@ namespace LegendsOfCodeAndMagic
                             if (creature.IsWard) continue;
                             if (creature.Defense < 5 && creature.Attack + creature.Defense < 9) continue;
                         }
+                        else if (rbItem.CardNumber == 148)
+                        {
+                            if (!creature.IsWard && !creature.IsGuard && creature.Attack <= 2) continue;
+                        }
                     }
 
                     var tr = attackTargets.SingleOrDefault(x =>
@@ -1984,6 +1988,10 @@ namespace LegendsOfCodeAndMagic
                         {
                             if (creature.IsWard) continue;
                             if (creature.Defense < 5 && creature.Attack + creature.Defense < 9) continue;
+                        }
+                        else if (rbItem.CardNumber == 148)
+                        {
+                            if (!creature.IsWard && !creature.IsGuard && creature.Attack <= 2) continue; 
                         }
 
                         if (rbItem.Defense + creature.Defense <= 0)
