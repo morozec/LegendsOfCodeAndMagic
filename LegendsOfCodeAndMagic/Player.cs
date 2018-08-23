@@ -399,6 +399,7 @@ namespace LegendsOfCodeAndMagic
 
 
                 {95, 0.501},
+                {96, 0.501},
                 {103, 0.502},
 
                 {50, 0.75},
@@ -486,7 +487,7 @@ namespace LegendsOfCodeAndMagic
 
         static IList<int> GetBadManyCardNumbers()
         {
-            return new List<int>(){152, 137, 133};
+            return new List<int>(){152};
         }
 
         static double GetCardWeight(Card card, IDictionary<int, int> handManaCurve)
@@ -520,6 +521,16 @@ namespace LegendsOfCodeAndMagic
                 {
                     weight -= (handCount - 1);
                     Console.Error.WriteLine($"{weight} big count weight");
+                }
+            }
+
+            if (card.IsGreenItem )
+            {
+                var handCount = _handCards.Count(c => c.IsGreenItem);
+                if (handCount >= 5)
+                {
+                    weight -= (handCount - 4);
+                    Console.Error.WriteLine($"{weight} many green weight");
                 }
             }
 
