@@ -1884,7 +1884,7 @@ namespace LegendsOfCodeAndMagic
                         }
                         else if (rbItem.CardNumber == 148)
                         {
-                            if (!creature.IsWard && !creature.IsGuard && creature.Attack <= 2) continue;
+                            if (!creature.IsWard && !creature.IsLethal && creature.Attack <= 2) continue;
                         }
                     }
 
