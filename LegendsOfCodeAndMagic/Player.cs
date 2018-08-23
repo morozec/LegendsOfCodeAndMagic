@@ -495,7 +495,7 @@ namespace LegendsOfCodeAndMagic
 
         static double GetCardWeight(Card card, IDictionary<int, int> handManaCurve)
         {
-            if (card.IsCreature && card.Attack == 0)
+            if (card.IsCreature && card.Attack == 0 || card.CardNumber == 153)
             {
                 Console.Error.WriteLine("- infinity");
                 return -double.MaxValue;
