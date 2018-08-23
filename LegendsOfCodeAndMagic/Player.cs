@@ -334,6 +334,7 @@ namespace LegendsOfCodeAndMagic
                 {13, -0.25},
                 {39, -0.25},
                 {56, -0.25},
+                {71, -0.25},
                 {72, -0.25},
 
                 {91, -0.25},
@@ -348,7 +349,7 @@ namespace LegendsOfCodeAndMagic
                 {36, 0},
                 {61, 0},
                 {70, 0},
-                {71, 0},
+                
                 {86, 0},
                 {90, 0},
                 {112, 0},
@@ -380,6 +381,7 @@ namespace LegendsOfCodeAndMagic
                 {145, 0.25},
 
 
+                {157, 0.25},
                 {159, 0.25},
 
 
@@ -387,6 +389,7 @@ namespace LegendsOfCodeAndMagic
                 {85, 0.5},
                 {87, 0.5},
                 {88, 0.5},
+                {115, 0.5},
                 {135, 0.5},
                 {141, 0.5},
                 {147, 0.5},
@@ -400,7 +403,7 @@ namespace LegendsOfCodeAndMagic
 
                 {54, 0.75},
 
-                {115, 0.75},
+               
                 {128, 0.75},
                 {144, 0.75},
 
