@@ -298,161 +298,141 @@ namespace LegendsOfCodeAndMagic
         private const double TOLERANCE = 1E-3;
         private static IList<Card> _handCards = new List<Card>();
 
-        static IList<int> GetBadCardIds()
-        {
-            return new List<int>() { 57, 4, 100, 140, 138, 143, 83, 86, 2, 142 };
-        }
-
-        static IList<int> GetGoodCardIds()
-        {
-            return new List<int>() { 151, 53 };
-        }
 
         static IDictionary<int, int> GetManaCurve()
         {
-            return new Dictionary<int, int>() { { 1, 3 }, { 2, 4 }, { 3, 5 }, { 4, 6 }, { 5, 5 }, { 6, 4 }, { 7, 3 } };
+            return new Dictionary<int, int>() {{1, 3}, {2, 4}, {3, 5}, {4, 6}, {5, 5}, {6, 4}, {7, 3}};
         }
 
         static IDictionary<int, double> GetConstCardWeights()
         {
             return new Dictionary<int, double>()
             {
-                
-               
-                {140, -5 },
-                {138, -5 },
-                {143, -5 },
-                {2, -5 },
-                {142, -5 },
-                {154, -5 },
-
-                {57, -4.5 },
 
 
-                {16, -0.5 },
-                {20, -0.5 },
-                {24, -0.5 },
-                {47, -0.5 },
-               
-                {100, -0.5 },
-                {131, -0.5 },
-                {149, -0.5 },
+                {140, -5},
+                {138, -5},
+                {143, -5},
+                {2, -5},
+                {142, -5},
+                {154, -5},
 
-                {1, -0.25 },
-                {14, -0.25 },
-                {13, -0.25 },
-                {39, -0.25 },
-                {56, -0.25 },
-                {72, -0.25 },
-               
-                {91, -0.25 },
-                {93, -0.25 },
-                {130, -0.25 },
-
-                {27,-0.01 },
-
-                {4, 0 },
-                
-                {11, 0 },
-                {36, 0 },
-                {61, 0 },
-                {70, 0 },
-                {71, 0 },
-                {86, 0 },
-                {90, 0 },
-                {112, 0 },
-                {118, 0 },
-                {125, 0 },
-                
-                
-                {136, 0 },
-
-                {5, 0.01 },
-                {34, 0.01 },
-                {83, 0.01 },
-                {104, 0.01 },
-
-                {21, 0.25 },
-                {38, 0.25 },
-                {41, 0.25 },
-                {81, 0.25 },
-               
-                {94, 0.25 },
-                {97, 0.25 },
-                {106, 0.25 },
-                {111, 0.25 },
-                {119, 0.25 },
-                {120, 0.25 },
-                {121, 0.25 },
-                {126, 0.25 },
-                {129, 0.25 },
-                {145, 0.25 },
-                
-                
-                {159, 0.25 },
+                {57, -4.5},
 
 
+                {16, -0.5},
+                {20, -0.5},
+                {24, -0.5},
+                {47, -0.5},
 
-                {85, 0.5 },
-                {88, 0.5 },
-                {135, 0.5 },
-                {141, 0.5 },
-                {147, 0.5 },
-                {155, 0.5 },
+                {100, -0.5},
+                {131, -0.5},
+                {149, -0.5},
+
+                {1, -0.25},
+                {14, -0.25},
+                {13, -0.25},
+                {39, -0.25},
+                {56, -0.25},
+                {72, -0.25},
+
+                {91, -0.25},
+                {93, -0.25},
+                {130, -0.25},
+
+                {27, -0.01},
+
+                {4, 0},
+
+                {11, 0},
+                {36, 0},
+                {61, 0},
+                {70, 0},
+                {71, 0},
+                {86, 0},
+                {90, 0},
+                {112, 0},
+                {118, 0},
+                {125, 0},
+
+
+                {136, 0},
+
+                {5, 0.01},
+                {34, 0.01},
+                {83, 0.01},
+                {104, 0.01},
+
+                {21, 0.25},
+                {38, 0.25},
+                {41, 0.25},
+                {81, 0.25},
+
+                {94, 0.25},
+                {97, 0.25},
+                {106, 0.25},
+                {111, 0.25},
+                {119, 0.25},
+                {120, 0.25},
+                {121, 0.25},
+                {126, 0.25},
+                {129, 0.25},
+                {145, 0.25},
+
+
+                {159, 0.25},
 
 
 
-                {95, 0.501 },
-                {103, 0.502 },
+                {85, 0.5},
+                {88, 0.5},
+                {135, 0.5},
+                {141, 0.5},
+                {147, 0.5},
+                {155, 0.5},
 
 
-                {54, 0.75 },
-               
-                {115, 0.75 },
-                {128, 0.75 },
-                {144, 0.75 },
-                
-                {150, 0.75 },
-                {152, 0.75 },
-                {158, 0.75 },
-                {148, 0.751 },
 
-                {50, 1 },
-                {52, 1 },
-                {64, 1 },
-                
-                {137, 1 },
-                
+                {95, 0.501},
+                {103, 0.502},
 
-                {139, 1.25 },
 
-                {66, 1.5 },
-                {87, 1.5 },
-                
-                
-                {7, 2 },
-                {44, 2 },
-                {67, 2 },
-                {133, 2 },
+                {54, 0.75},
 
-                {151, 5 },
-                {53, 5 },
+                {115, 0.75},
+                {128, 0.75},
+                {144, 0.75},
+
+                {150, 0.75},
+                {152, 0.75},
+                {158, 0.75},
+                {148, 0.751},
+
+                {50, 1},
+                {52, 1},
+                {64, 1},
+
+                {137, 1},
+
+
+                {139, 1.25},
+
+                {66, 1.5},
+                {87, 1.5},
+
+
+                {7, 2},
+                {44, 2},
+                {67, 2},
+                {133, 2},
+
+                {151, 5},
+                {53, 5},
             };
         }
 
-        static double GetCardWeight(Card card)
+        static double GetCalcCardWeight(Card card)
         {
-            if (card.IsCreature && card.Attack == 0) return -double.MaxValue;
-            //if (card.IsGreenItem && card.Attack == 0) return -double.MaxValue;
-            //if (card.IsRedItem && card.Defense >= 0) return -double.MaxValue;
-
-            var constCardWeights = GetConstCardWeights();
-            if (constCardWeights.ContainsKey(card.CardNumber))
-            {
-                Console.Error.WriteLine($"{constCardWeights[card.CardNumber]} const");
-                return constCardWeights[card.CardNumber];
-            }
-
             var weight = 0d;
 
             if (!card.IsRedItem)
@@ -487,14 +467,55 @@ namespace LegendsOfCodeAndMagic
                 weight += Math.Abs(card.Attack);
                 weight += Math.Abs(card.Defense);
                 weight /= 2d;
-                
+
                 if (card.Abilities == "BCDGLW") weight += 1;
             }
 
             weight += card.CardDraw * 2;
 
             weight -= card.Cost;
-            Console.Error.WriteLine(weight);
+            return weight;
+        }
+
+        static IList<int> GetBadManyCardNumbers()
+        {
+            return new List<int>(){152, 137, 133};
+        }
+
+        static double GetCardWeight(Card card)
+        {
+            if (card.IsCreature && card.Attack == 0)
+            {
+                Console.Error.WriteLine("- infinity");
+                return -double.MaxValue;
+            }
+            //if (card.IsGreenItem && card.Attack == 0) return -double.MaxValue;
+            //if (card.IsRedItem && card.Defense >= 0) return -double.MaxValue;
+
+            var constCardWeights = GetConstCardWeights();
+            double weight;
+            if (constCardWeights.ContainsKey(card.CardNumber))
+            {
+                weight = constCardWeights[card.CardNumber];
+                Console.Error.WriteLine($"{weight} const");
+            }
+            else
+            {
+                weight = GetCalcCardWeight(card);
+                Console.Error.WriteLine($"{weight}");
+            }
+
+            var badManyCardNumbers = GetBadManyCardNumbers();
+            if (badManyCardNumbers.Contains(card.CardNumber))
+            {
+                var handCount = _handCards.Count(c => c.CardNumber == card.CardNumber);
+                if (handCount >= 2)
+                {
+                    weight -= (handCount - 1);
+                    Console.Error.WriteLine($"{weight} big count weight");
+                }
+            }
+
             return weight;
         }
 
