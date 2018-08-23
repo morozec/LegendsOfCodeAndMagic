@@ -605,6 +605,7 @@ namespace LegendsOfCodeAndMagic
                 manaLeft,
                 BOARD_SIZE - myCreaturesOnBoardCount,
                 allCreatures.Where(c => c.Location == -1).ToList(),
+                allCreatures.Where(c => c.Location == 1).ToList(),
                 myPlayerHp,
                 oppPlayerHp);
 
@@ -1128,28 +1129,32 @@ namespace LegendsOfCodeAndMagic
             if (mySumAttackDiff != 0) return mySumAttackDiff;//сумма атак моих существ
 
             var oppSumDamage1 = 0;
-            foreach (var tr in tradeResults1.Where(x => x.OppCreature != null))
+            foreach (var tr in tradeResults1.Where(x => x.OppCreature != null && x.IsKilling))
             {
                 oppSumDamage1 += tr.OppCreature.Attack + tr.OppCreature.Defense;
+                if (tr.OppCreature.IsLethal) oppSumDamage1 += tr.OppCreature.Attack + tr.OppCreature.Defense;
             }
             var oppSumDamage2 = 0;
-            foreach (var tr in tradeResults2.Where(x => x.OppCreature != null))
+            foreach (var tr in tradeResults2.Where(x => x.OppCreature != null && x.IsKilling))
             {
                 oppSumDamage2 += tr.OppCreature.Attack + tr.OppCreature.Defense;
+                if (tr.OppCreature.IsLethal) oppSumDamage2 += tr.OppCreature.Attack + tr.OppCreature.Defense;
             }
             var oppSumDamageDiff = oppSumDamage1 - oppSumDamage2;
             if (oppSumDamageDiff != 0) return -oppSumDamageDiff;//сумма навыков существ противника, которых мы будем бить
 
 
             var oppSumAttack1 = 0;
-            foreach (var tr in tradeResults1.Where(x => x.OppCreature != null))
+            foreach (var tr in tradeResults1.Where(x => x.OppCreature != null && x.IsKilling))
             {
                 oppSumAttack1 += tr.OppCreature.Attack;
+                if (tr.OppCreature.IsLethal) oppSumAttack1 += tr.OppCreature.Attack;
             }
             var oppSumAttack2 = 0;
-            foreach (var tr in tradeResults2.Where(x => x.OppCreature != null))
+            foreach (var tr in tradeResults2.Where(x => x.OppCreature != null && x.IsKilling))
             {
                 oppSumAttack2 += tr.OppCreature.Attack;
+                if (tr.OppCreature.IsLethal) oppSumAttack2 += tr.OppCreature.Attack;
             }
             var oppSumAttackDiff = oppSumAttack1 - oppSumAttack2;
             if (oppSumAttackDiff != 0) return -oppSumAttackDiff;//сумма атак существ противника, которых мы будем бить
@@ -1254,14 +1259,14 @@ namespace LegendsOfCodeAndMagic
 
         #region SUMMON
 
-        static IList<Card> GetSummonningCreatures(IList<Card> myCreatures, int manaLeft, int boardPlaceLeft, IList<Card> oppTableCreatures, int myPlayerHp, int oppPlayerHp)
+        static IList<Card> GetSummonningCreatures(IList<Card> myCreatures, int manaLeft, int boardPlaceLeft, IList<Card> oppTableCreatures, IList<Card> myTableCreatures, int myPlayerHp, int oppPlayerHp)
         {
-            var maxCards = GetMaxCards(myCreatures, new List<Card>(), manaLeft, boardPlaceLeft, oppTableCreatures, myPlayerHp, oppPlayerHp);
+            var maxCards = GetMaxCards(myCreatures, new List<Card>(), manaLeft, boardPlaceLeft, oppTableCreatures, myTableCreatures, myPlayerHp, oppPlayerHp);
             return maxCards;
         }
 
         private static IList<Card> GetMaxCards(IList<Card> cards, IList<Card> usedCards, int manaLeft, int boardPlaceLeft,
-            IList<Card> oppTableCreatures = null, int myHeroHp = 0, int oppHeroHp = 0)
+            IList<Card> oppTableCreatures = null, IList<Card> myTableCreatures = null, int myHeroHp = 0, int oppHeroHp = 0)
         {
             var maxCards = new List<Card>();
             IList<TradeResult> bestTradeResults = null;
@@ -1273,15 +1278,18 @@ namespace LegendsOfCodeAndMagic
                 if (card.Cost > manaLeft) continue;
 
                 var newUsedCards = new List<Card>(usedCards) { card };
-                var currMaxCards = GetMaxCards(cards, newUsedCards, manaLeft - card.Cost, boardPlaceLeft - 1, oppTableCreatures, myHeroHp, oppHeroHp);
+                var currMaxCards = GetMaxCards(cards, newUsedCards, manaLeft - card.Cost, boardPlaceLeft - 1, oppTableCreatures, myTableCreatures, myHeroHp, oppHeroHp);
 
                 var tmpCards = new List<Card>() { card };
                 tmpCards.AddRange(currMaxCards);
+                
 
                 IList<TradeResult> tradeResults = null;
                 if (oppTableCreatures != null)
                 {
-                    tradeResults = GetAttackTargets(tmpCards, new List<Card>(oppTableCreatures), oppTableCreatures,myHeroHp, oppHeroHp,
+                    var targets = new List<Card>(tmpCards);
+                    if (myTableCreatures != null) targets.AddRange(myTableCreatures);
+                    tradeResults = GetAttackTargets(targets, new List<Card>(oppTableCreatures), oppTableCreatures,myHeroHp, oppHeroHp,
                         new List<Card>(), 0);
                 }
 
@@ -1376,6 +1384,7 @@ namespace LegendsOfCodeAndMagic
                 manaLeft,
                 BOARD_SIZE - myCreaturesOnBoardCount,
                 allCreatures.Where(c => c.Location == -1).ToList(),
+                allCreatures.Where(c => c.Location == 1).ToList(),
                 myPlayerHp,
                 oppPlayerHp);
 
