@@ -431,6 +431,8 @@ namespace LegendsOfCodeAndMagic
                 {67, 2},
                 {133, 2},
 
+                {80, 2.002},
+
                 {151, 5},
                 {53, 5},
             };
