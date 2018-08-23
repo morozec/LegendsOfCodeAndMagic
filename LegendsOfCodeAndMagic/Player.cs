@@ -385,6 +385,7 @@ namespace LegendsOfCodeAndMagic
 
 
                 {85, 0.5},
+                {87, 0.5},
                 {88, 0.5},
                 {135, 0.5},
                 {141, 0.5},
@@ -418,7 +419,7 @@ namespace LegendsOfCodeAndMagic
                 {139, 1.25},
 
                 {66, 1.5},
-                {87, 1.5},
+               
 
 
                 {7, 2},
@@ -514,6 +515,13 @@ namespace LegendsOfCodeAndMagic
                     weight -= (handCount - 1);
                     Console.Error.WriteLine($"{weight} big count weight");
                 }
+            }
+
+            var cardDraw = _handCards.Sum(c => c.CardDraw);
+            if (card.CardDraw > 0 && cardDraw > 3)
+            {
+                weight -= card.CardDraw * 2;
+                Console.Error.WriteLine($"{weight} many card draw weight");
             }
 
             return weight;
