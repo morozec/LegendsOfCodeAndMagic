@@ -1044,6 +1044,8 @@ namespace LegendsOfCodeAndMagic
             var isBetterPosition = isKillingStrong && !isBestPositionKillingStrong ||
                                    positionWeight > bestPositionWeight ||
                                    positionWeight == bestPositionWeight && bestTradeCard != null &&
+                                   (tradeCard.IsBlueItem || tradeCard.IsRedItem) && bestTradeCard.IsCreature ||
+                                   positionWeight == bestPositionWeight && bestTradeCard != null &&
                                    (tradeCard.IsRedItem || tradeCard.IsBlueItem) &&
                                    (bestTradeCard.IsRedItem || bestTradeCard.IsBlueItem) &&
                                    tradeCard.Defense >= bestTradeCard.Defense ||
