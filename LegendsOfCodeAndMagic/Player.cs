@@ -538,9 +538,9 @@ namespace LegendsOfCodeAndMagic
             }
 
             var cardDraw = _handCards.Sum(c => c.CardDraw);
-            if (card.IsCreature && card.CardDraw > 0 && cardDraw > 3)
+            if (card.IsCreature && card.CardDraw > 0 && cardDraw > 5)
             {
-                weight -= card.CardDraw * 2;
+                weight -= card.CardDraw;
                 Console.Error.WriteLine($"{weight} many card draw weight");
             }
 
