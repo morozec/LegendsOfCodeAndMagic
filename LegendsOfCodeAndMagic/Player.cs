@@ -378,6 +378,7 @@ namespace LegendsOfCodeAndMagic
                 {121, 0.25},
                 {126, 0.25},
                 {129, 0.25},
+                {135, 0.25},
                 {145, 0.25},
 
 
@@ -390,7 +391,7 @@ namespace LegendsOfCodeAndMagic
                 {87, 0.5},
                 {88, 0.5},
                 {115, 0.5},
-                {135, 0.5},
+                
                 {141, 0.5},
                 {147, 0.5},
                 {155, 0.5},
@@ -400,7 +401,7 @@ namespace LegendsOfCodeAndMagic
                 {95, 0.501},
                 {103, 0.502},
 
-
+                {50, 0.75},
                 {54, 0.75},
 
                
@@ -412,7 +413,7 @@ namespace LegendsOfCodeAndMagic
                 {158, 0.75},
                 {148, 0.751},
 
-                {50, 1},
+                
                 {52, 1},
                 {64, 1},
 
@@ -486,7 +487,7 @@ namespace LegendsOfCodeAndMagic
             return new List<int>(){152, 137, 133};
         }
 
-        static double GetCardWeight(Card card)
+        static double GetCardWeight(Card card, IDictionary<int, int> handManaCurve)
         {
             if (card.IsCreature && card.Attack == 0)
             {
@@ -525,6 +526,12 @@ namespace LegendsOfCodeAndMagic
             {
                 weight -= card.CardDraw * 2;
                 Console.Error.WriteLine($"{weight} many card draw weight");
+            }
+
+            if (card.Cost >= 7 && handManaCurve[7] >= 5)
+            {
+                weight -= (handManaCurve[7] - 4);
+                Console.Error.WriteLine($"{weight} many big cards weight");
             }
 
             return weight;
@@ -1184,7 +1191,7 @@ namespace LegendsOfCodeAndMagic
 
                 var manaCurveLack = manaCurve[cost] - handManaCurve[cost];
 
-                var cardWeight = GetCardWeight(card);
+                var cardWeight = GetCardWeight(card, handManaCurve);
                 if (cardWeight - maxWeight > TOLERANCE)
                 {
                     resCardIndex = i;
