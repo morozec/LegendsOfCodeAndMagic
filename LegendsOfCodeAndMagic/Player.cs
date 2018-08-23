@@ -1172,6 +1172,27 @@ namespace LegendsOfCodeAndMagic
             var oppSumAttackDiff = oppSumAttack1 - oppSumAttack2;
             if (oppSumAttackDiff != 0) return -oppSumAttackDiff;//сумма атак существ противника, которых мы будем бить
 
+            var mySumDamage1 = 0;
+            foreach (var tr in tradeResults1.Where(x => x.OppCreature != null))
+            {
+                foreach (var card in tr.MyCards.Where(c => c.IsCreature && !tr.MyDeadCreatures.Contains(c)))
+                {
+                    if (card.IsWard) continue;
+                    mySumDamage1 += tr.OppCreature.Attack;
+                }
+            }
+            var mySumDamage2 = 0;
+            foreach (var tr in tradeResults2.Where(x => x.OppCreature != null))
+            {
+                foreach (var card in tr.MyCards.Where(c => c.IsCreature && !tr.MyDeadCreatures.Contains(c)))
+                {
+                    if (card.IsWard) continue;
+                    mySumDamage2 += tr.OppCreature.Attack;
+                }
+            }
+            var mySumDamageDiff = mySumDamage1 - mySumDamage2;
+            if (mySumDamageDiff != 0) return mySumDamageDiff;//урон по мне
+
 
             var heroDamage1 = 0;
             var heroTradeResult1 = tradeResults1.SingleOrDefault(x => x.OppCreature == null);
