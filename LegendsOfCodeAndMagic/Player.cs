@@ -382,6 +382,7 @@ namespace LegendsOfCodeAndMagic
                 {126, 0.25},
                 {129, 0.25},
                 {135, 0.25},
+                {137, 0.25},
                 {145, 0.25},
 
 
@@ -421,7 +422,7 @@ namespace LegendsOfCodeAndMagic
                 {52, 1},
                 {64, 1},
 
-                {137, 1},
+               
 
 
                 {139, 1.25},
@@ -1337,49 +1338,62 @@ namespace LegendsOfCodeAndMagic
                 }
                 else if (card.Cost + currMaxCards.Sum(c => c.Cost) == maxCards.Sum(c => c.Cost))
                 {
-                    if (tmpCards.Count > maxCards.Count)
+                    //if (tmpCards.Count > maxCards.Count)
+                    //{
+                    //    maxCards = tmpCards;
+                    //    bestTradeResults = tradeResults;
+                    //}
+                    //else
+                    //{
+                    if (tradeResults != null)
                     {
-                        maxCards = tmpCards;
-                        bestTradeResults = tradeResults;
+                        if (bestTradeResults == null)
+                        {
+                            maxCards = tmpCards;
+                            bestTradeResults = tradeResults;
+                        }
+
+                        var trCompare = CompareTradeResultLists(tradeResults, bestTradeResults, false);
+
+                        if (trCompare > 0) //tradeResults хуже для врага - т.е. лучше для меня
+                        {
+                            maxCards = tmpCards;
+                            bestTradeResults = tradeResults;
+                        }
+
+                        else if (trCompare == 0)
+                        {
+                            if (tmpCards.Count > maxCards.Count)
+                            {
+                                maxCards = tmpCards;
+                                bestTradeResults = tradeResults;
+                            }
+
+                            else if (card.Attack + card.Defense + currMaxCards.Sum(c => c.Attack + c.Defense) >
+                                     maxCards.Sum(c => c.Attack + c.Defense))
+                            {
+                                maxCards = tmpCards;
+                                bestTradeResults = tradeResults;
+                            }
+                        }
                     }
                     else
                     {
-                        if (tradeResults != null)
+                        if (tmpCards.Count > maxCards.Count)
                         {
-                            if (bestTradeResults == null)
-                            {
-                                maxCards = tmpCards;
-                                bestTradeResults = tradeResults;
-                            }
-
-                            var trCompare = CompareTradeResultLists(tradeResults, bestTradeResults, false);
-
-                            if (trCompare > 0) //tradeResults хуже для врага - т.е. лучше для меня
-                            {
-                                maxCards = tmpCards;
-                                bestTradeResults = tradeResults;
-                            }
-
-                            else if (trCompare == 0)
-                            {
-                                if (card.Attack + card.Defense + currMaxCards.Sum(c => c.Attack + c.Defense) >
-                                    maxCards.Sum(c => c.Attack + c.Defense))
-                                {
-                                    maxCards = tmpCards;
-                                    bestTradeResults = tradeResults;
-                                }
-                            }
+                            maxCards = new List<Card>() { card };
+                            maxCards.AddRange(currMaxCards);
                         }
-                        else
+
+                        else if (card.Attack + card.Defense + currMaxCards.Sum(c => c.Attack + c.Defense) >
+                                 maxCards.Sum(c => c.Attack + c.Defense))
                         {
-                            if (card.Attack + card.Defense + currMaxCards.Sum(c => c.Attack + c.Defense) >
-                                maxCards.Sum(c => c.Attack + c.Defense))
-                            {
-                                maxCards = new List<Card>() {card};
-                                maxCards.AddRange(currMaxCards);
-                            }
+                            maxCards = new List<Card>() {card};
+                            maxCards.AddRange(currMaxCards);
                         }
                     }
+
+                    //}
                 }
             }
 
