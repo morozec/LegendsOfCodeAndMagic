@@ -310,7 +310,9 @@ namespace LegendsOfCodeAndMagic
             {
                 //личная неприязнь
                 {2, -5},
+                {36, 0.75}, //очень много прибавляли за добор
                 {61, 0.01}, //слишком толстый и бесполезный
+                {91, 0.49}, //слишком слабый
                 {115, 0.5}, //слишком толстый и бесполезный
 
                 //рывок
@@ -340,7 +342,7 @@ namespace LegendsOfCodeAndMagic
                 {118, 0},
                 {119, 0.25},
                 {121, 0.25},
-                {122, 0},
+                {122, 0.25},
                 {123, -0.25},
                 {124, -1.5},
                 {125, 0},
@@ -423,7 +425,6 @@ namespace LegendsOfCodeAndMagic
             if (attDefDiff >= 2) weight -= 0.25 * (attDefDiff);
             else if (attDefDiff <= -3) weight -= 0.25 * (Math.Abs(attDefDiff) - 2);
 
-            if (creature.Attack > creature.Defense) weight -= 0.01;
 
             weight -= creature.Cost;
             return weight;
