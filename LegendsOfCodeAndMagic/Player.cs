@@ -308,142 +308,31 @@ namespace LegendsOfCodeAndMagic
         {
             return new Dictionary<int, double>()
             {
-
-
-                {140, -5},
-                {138, -5},
-               
+                //личная неприязнь
                 {2, -5},
-               
-                
+                {61, 0.01}, //слишком толстый и бесполезный
+                {115, 0.5}, //слишком толстый и бесполезный
 
-                {57, -4.5},
-
-
-                {16, -0.5},
-                {20, -0.5},
-                {24, -0.5},
-                
-
-                {100, -0.5},
-               
-                
-
-                {1, -0.25},
-                {14, -0.25},
-                {13, -0.25},
-                {39, -0.25},
-                {56, -0.25},
-                {71, -0.25},
-                {72, -0.25},
-
-               
-                {93, -0.25},
-                
-                
-
-                {27, -0.01},
-
-                {5, 0},
-                {11, 0},
-                {36, 0},
+                //рывок
                 {41, 0},
-                {61, 0},
-                {70, 0},
-                
-                {86, 0},
-                {90, 0},
-                {112, 0},
-                
-                
-
-
-                
-
-              
-                {4, 0.01},
-               
-                {34, 0.01},
-                {47, 0.01},
-                {83, 0.01},
-                {91, 0.01},
-                {97, 0.01},
-                {104, 0.01},
-
-                {21, 0.25},
-                {38, 0.25},
-               
+                {71, -0.25},
                 {81, 0.25},
-
-                {94, 0.25},
-               
-                {106, 0.25},
-                {111, 0.25},
-               
-               
-               
-               
-               
-                
-                
-                
-
-
-                
-                
-
-
-
+                {83, 0.01},
+                {84, 0.75},
                 {85, 0.5},
+                {86, 0},
                 {87, 0.5},
                 {88, 0.5},
-                {115, 0.5},
-                
-                
-                
-                
-
-
-
-                {95, 0.501},
-                {96, 0.501},
-                {103, 0.502},
-
-                {50, 0.75},
-                {54, 0.75},
-
-               
-                
-                
-
-                
-               
-               
-                
-
-
-                {52, 1},
-                {64, 1},
-
-               
-
-
-               
-
-                {66, 1.5},
-                {82, 1.5},
-               
-
-
-                {7, 2},
-                {44, 2},
-                {67, 2},
-                
-
-                {80, 2.002},
-
-                
+                {89, -2},
+                {90, 0},
                 {53, 5},
+
+                //щит
+                {64, 0.5},
+                {66, 0.5},
+                {67, 2},
+                {82, 1.5},
+                
 
                 //зеленые шмотки
                 //обычные
@@ -465,6 +354,8 @@ namespace LegendsOfCodeAndMagic
                 {134, 0.25},
                 {135, 0.249},
                 {136, 0},
+                {138, -5},
+                {140, -5},
 
                 //летал и щит
                 {120, 0.25},
@@ -498,49 +389,42 @@ namespace LegendsOfCodeAndMagic
             };
         }
 
-        static double GetCalcCardWeight(Card card)
+        static double GetCalcCreatureWeight(Card creature)
         {
             var weight = 0d;
 
-            if (!card.IsRedItem)
+            if (creature.IsLethal)
             {
-                if (card.IsLethal)
-                {
-                    weight += card.Defense;
-                    if (card.IsWard) weight += card.Defense;
-                    weight += 2;
-                }
-                else
-                {
-                    weight += card.Attack;
-                    weight += card.Defense;
-
-                    if (card.IsWard)
-                    {
-                        weight += card.Attack;
-                        weight += card.Defense;
-                    }
-
-                    weight /= 2;
-                }
-
-                if (card.IsCreature)
-                {
-                    if (card.IsCharge) weight += 0.5;
-                }
+                weight += creature.Defense;
+                if (creature.IsWard) weight += creature.Defense;
+                weight += 1;
             }
             else
             {
-                weight += Math.Abs(card.Attack);
-                weight += Math.Abs(card.Defense);
-                weight /= 2d;
+                weight += creature.Attack;
+                weight += creature.Defense;
 
-                if (card.Abilities == "BCDGLW") weight += 1;
+                if (creature.IsWard)
+                {
+                    weight += creature.Attack;
+                    weight += creature.Defense;
+                }
+                weight /= 2;
             }
 
-            weight += card.CardDraw * 2;
+            
 
-            weight -= card.Cost;
+            if (creature.IsCharge) weight += 0.5;
+            weight += creature.CardDraw * 2;
+
+            if (creature.IsGuard) weight += 0.01;
+
+            var attDefDiff = Math.Abs(creature.Attack - creature.Defense);
+            if (attDefDiff >= 2) weight -= 0.25 * (attDefDiff);
+
+            if (creature.Attack > creature.Defense) weight -= 0.01;
+
+            weight -= creature.Cost;
             return weight;
         }
 
@@ -568,7 +452,7 @@ namespace LegendsOfCodeAndMagic
             }
             else
             {
-                weight = GetCalcCardWeight(card);
+                weight = GetCalcCreatureWeight(card);
                 Console.Error.WriteLine($"{weight}");
             }
 
