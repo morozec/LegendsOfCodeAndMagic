@@ -1945,6 +1945,8 @@ namespace LegendsOfCodeAndMagic
                 for (int i = 0; i < allAtackingCreatures.Count; ++i)
                 {
                     var creature = allAtackingCreatures[i];
+                    if (creature.IsWard && greenItem.IsWard || creature.IsLethal && greenItem.IsLethal) continue;
+
                     var newCreature = UpdateCreatureWithItem(new Card(creature), greenItem);
                     allAtackingCreatures[i] = newCreature;
 
