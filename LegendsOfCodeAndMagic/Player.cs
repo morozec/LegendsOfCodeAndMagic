@@ -1076,7 +1076,7 @@ namespace LegendsOfCodeAndMagic
                                    positionWeight == bestPositionWeight && bestTradeCard != null &&
                                    (tradeCard.IsRedItem || tradeCard.IsBlueItem) &&
                                    (bestTradeCard.IsRedItem || bestTradeCard.IsBlueItem) &&
-                                   tradeCard.Defense >= bestTradeCard.Defense ||
+                                   (tradeCard.Defense > bestTradeCard.Defense || tradeCard.Defense == bestTradeCard.Defense && !tradeCard.IsLethal && bestTradeCard.IsLethal) ||
                                    isSameOppCreatures && isSameMyCreatures && bestTradeCard != null &&
                                     tradeCard.IsGreenItem && bestTradeCard.IsGreenItem &&
                                    (tradeCard.Attack + tradeCard.Defense < bestTradeCard.Attack + bestTradeCard.Defense);
