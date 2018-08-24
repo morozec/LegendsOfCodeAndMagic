@@ -1133,7 +1133,13 @@ namespace LegendsOfCodeAndMagic
                 position.Where(c => c.Location == 1).All(c => bestPoisition.Any(cc => cc.InstanceId == c.InstanceId && cc.Location == 1)) &&
                 bestPoisition.Where(c => c.Location == 1).All(c => position.Any(cc => cc.InstanceId == c.InstanceId && cc.Location == 1));
 
-            var isBetterPosition = isKillingStrong && !isBestPositionKillingStrong ||
+            bool isBetterPosition;
+            if (isBestPositionKillingStrong && !isKillingStrong)
+            {
+                isBetterPosition = false;
+            }
+            else
+                isBetterPosition = isKillingStrong && !isBestPositionKillingStrong ||
                                    positionWeight > bestPositionWeight ||
                                    positionWeight == bestPositionWeight && bestTradeCard != null &&
                                    (tradeCard.IsBlueItem || tradeCard.IsRedItem) && bestTradeCard.IsCreature ||
@@ -1144,7 +1150,12 @@ namespace LegendsOfCodeAndMagic
                                    isSameOppCreatures && isSameMyCreatures && bestTradeCard != null &&
                                     tradeCard.IsGreenItem && bestTradeCard.IsGreenItem &&
                                    (tradeCard.Attack + tradeCard.Defense < bestTradeCard.Attack + bestTradeCard.Defense);
-            if (isSameOppCreatures)
+
+            if (isSameOppCreatures && isSameMyCreatures)//если позиции одинаковы по существам, не тратим лишние карты на размен
+            {
+                return positionWeight - bestPositionWeight;
+            }
+            else if (isSameOppCreatures)
             {
                 var posCount = position.Count(c => c.Location == 1);
                 var bestPosCount = bestPoisition.Count(c => c.Location == 1);
