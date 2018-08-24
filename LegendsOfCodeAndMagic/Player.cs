@@ -312,10 +312,10 @@ namespace LegendsOfCodeAndMagic
 
                 {140, -5},
                 {138, -5},
-                {143, -5},
+               
                 {2, -5},
-                {142, -5},
-                {154, -5},
+               
+                
 
                 {57, -4.5},
 
@@ -327,7 +327,7 @@ namespace LegendsOfCodeAndMagic
 
                 {100, -0.5},
                
-                {149, -0.5},
+                
 
                 {1, -0.25},
                 {14, -0.25},
@@ -337,7 +337,7 @@ namespace LegendsOfCodeAndMagic
                 {71, -0.25},
                 {72, -0.25},
 
-                {91, -0.25},
+               
                 {93, -0.25},
                 
                 
@@ -366,6 +366,7 @@ namespace LegendsOfCodeAndMagic
                 {34, 0.01},
                 {47, 0.01},
                 {83, 0.01},
+                {91, 0.01},
                 {97, 0.01},
                 {104, 0.01},
 
@@ -385,11 +386,11 @@ namespace LegendsOfCodeAndMagic
                
                 
                 
-                {145, 0.25},
+                
 
 
-                {157, 0.25},
-                {159, 0.25},
+                
+                
 
 
 
@@ -398,9 +399,9 @@ namespace LegendsOfCodeAndMagic
                 {88, 0.5},
                 {115, 0.5},
                 
-                {141, 0.5},
-                {147, 0.5},
-                {155, 0.5},
+                
+                
+                
 
 
 
@@ -413,13 +414,12 @@ namespace LegendsOfCodeAndMagic
 
                
                 
-                {144, 0.75},
+                
 
-                {150, 0.75},
+                
                
-                {158, 0.75},
-                {148, 0.751},
-                {152, 0.751},
+               
+                
 
 
                 {52, 1},
@@ -442,12 +442,12 @@ namespace LegendsOfCodeAndMagic
 
                 {80, 2.002},
 
-                {151, 5},
+                
                 {53, 5},
 
                 //зеленые шмотки
                 //обычные
-                {117,-0.25 },//уменьшить
+                {117,-0.25 },
                 {118, 0},
                 {119, 0.25},
                 {121, 0.25},
@@ -463,7 +463,7 @@ namespace LegendsOfCodeAndMagic
                 {131, -0.5},
                 {132, -2},
                 {134, 0.25},
-                {135, 0.25},//уменьшить
+                {135, 0.249},
                 {136, 0},
 
                 //летал и щит
@@ -471,6 +471,30 @@ namespace LegendsOfCodeAndMagic
                 {133, 1.25},
                 {137, 0.25},
                 {139, 1.25},
+
+                //голубые шмотки
+                {153, -100 },
+                {154, -3},
+                {155, 0.5},
+                {156, -5},
+                {157, 0.25},
+                {158, 0.75},
+                {159, 0},
+                {160, -5},
+
+                //красные шмотки
+                {141, 0.5},
+                {142, -3.01},
+                {143, -5},
+                {144, 0.75},
+                {145, 0.25},
+                {146, -3},
+                {147, 0.5},
+                {148, 0.751},
+                {149, -1},
+                {150, 0.75},
+                {151, 5},
+                {152, 0.752},
             };
         }
 
@@ -527,7 +551,7 @@ namespace LegendsOfCodeAndMagic
 
         static double GetCardWeight(Card card, IDictionary<int, int> handManaCurve)
         {
-            if (card.IsCreature && card.Attack == 0 || card.CardNumber == 153)
+            if (card.IsCreature && card.Attack == 0)
             {
                 Console.Error.WriteLine("- infinity");
                 return -double.MaxValue;
