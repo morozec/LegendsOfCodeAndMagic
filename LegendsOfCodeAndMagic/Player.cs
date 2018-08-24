@@ -551,6 +551,15 @@ namespace LegendsOfCodeAndMagic
                 Console.Error.WriteLine($"{weight} many big cards weight");
             }
 
+            var creaturesCount = _handCards.Count(c => c.IsCreature);
+            if (card.IsCreature && _handCards.Count > 20 && creaturesCount < 15)
+            {
+                var creaturesLack = 15 - creaturesCount;
+                var roundsLeft = 30 - _handCards.Count;
+                weight += creaturesLack * 1d / roundsLeft;
+                Console.Error.WriteLine($"{creaturesLack} {roundsLeft} {weight} not enough creatures");
+            }
+
             return weight;
         }
 
