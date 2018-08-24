@@ -419,8 +419,9 @@ namespace LegendsOfCodeAndMagic
 
             if (creature.IsGuard) weight += 0.01;
 
-            var attDefDiff = Math.Abs(creature.Attack - creature.Defense);
+            var attDefDiff = creature.Attack - creature.Defense;
             if (attDefDiff >= 2) weight -= 0.25 * (attDefDiff);
+            else if (attDefDiff <= -3) weight -= 0.25 * (Math.Abs(attDefDiff) - 2);
 
             if (creature.Attack > creature.Defense) weight -= 0.01;
 
